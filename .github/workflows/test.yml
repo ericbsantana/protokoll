@@ -2,11 +2,8 @@ name: test
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-
-# Action versions pinned to commit SHAs. To bump, re-resolve with:
-#   git ls-remote https://github.com/<owner>/<repo> v6^{}
 
 jobs:
   forge:
@@ -14,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          submodules: recursive   # lib/forge-std is a git submodule
+          submodules: recursive # lib/forge-std is a git submodule
       - uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # v1
       - run: forge --version
       - run: forge build --sizes
