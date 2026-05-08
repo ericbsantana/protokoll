@@ -16,8 +16,9 @@ const REQUESTED_EVENT = parseAbiItem(
 );
 
 const ADAPTER_ABI = parseAbi([
-  'function fulfill(bytes32 roundId, bytes gamma, uint256 c, uint256 s)',
-  'function fulfilled(bytes32 roundId) view returns (bool)',
+  'function fulfill(address consumer, bytes32 roundId, bytes gamma, uint256 c, uint256 s)',
+  'function fulfilled(bytes32 key) view returns (bool)',
+  'function requestKey(address consumer, bytes32 roundId) pure returns (bytes32)',
 ]);
 
 const POLL_INTERVAL_MS = 1000;
@@ -72,7 +73,9 @@ export class OracleService {
           console.log(`[oracle] getLogs returned ${logs.length} event(s)`);
 
           for (const log of logs) {
-            if (log.args.roundId) void this.fulfill(log.args.roundId);
+            if (log.args.roundId && log.args.requester) {
+              void this.fulfill(log.args.requester, log.args.roundId);
+            }
           }
 
           fromBlock = current + 1n;
@@ -92,26 +95,34 @@ export class OracleService {
     console.log('[oracle] stopped');
   }
 
-  private async fulfill(roundId: Hex): Promise<void> {
-    if (this.processed.has(roundId)) return;
-    this.processed.add(roundId);
+  private async fulfill(consumer: Hex, roundId: Hex): Promise<void> {
+    const dedupeKey = `${consumer.toLowerCase()}:${roundId.toLowerCase()}`;
+    if (this.processed.has(dedupeKey)) return;
+    this.processed.add(dedupeKey);
 
     try {
       const client = createPublicClient({ chain: this.chain, transport: http(this.config.rpcUrl) });
 
-      // Skip if already fulfilled on-chain (e.g. service restarted after a partial run)
+      // Skip if already fulfilled on-chain (e.g. service restarted after a partial run).
+      // Storage is keyed on requestKey(consumer, roundId), so look that up first.
+      const key = await client.readContract({
+        address: this.config.adapterAddress,
+        abi: ADAPTER_ABI,
+        functionName: 'requestKey',
+        args: [consumer, roundId],
+      });
       const alreadyDone = await client.readContract({
         address: this.config.adapterAddress,
         abi: ADAPTER_ABI,
         functionName: 'fulfilled',
-        args: [roundId],
+        args: [key],
       });
       if (alreadyDone) {
-        console.log(`[oracle] roundId=${roundId} already fulfilled on-chain, skipping`);
+        console.log(`[oracle] consumer=${consumer} roundId=${roundId} already fulfilled, skipping`);
         return;
       }
 
-      console.log(`[oracle] generating proof for roundId=${roundId}`);
+      console.log(`[oracle] generating proof for consumer=${consumer} roundId=${roundId}`);
       const proof = await generateOracleProof(this.config.k, hexToBytes(roundId));
 
       const account = privateKeyToAccount(this.config.privateKey);
@@ -125,14 +136,16 @@ export class OracleService {
         address: this.config.adapterAddress,
         abi: ADAPTER_ABI,
         functionName: 'fulfill',
-        args: [roundId, encodePointHex(proof.gamma), proof.c, proof.s],
+        args: [consumer, roundId, encodePointHex(proof.gamma), proof.c, proof.s],
       });
 
       const betaHex = Array.from(proof.beta).map(b => b.toString(16).padStart(2, '0')).join('');
-      console.log(`[oracle] fulfilled roundId=${roundId} beta=0x${betaHex} tx=${txHash}`);
+      console.log(
+        `[oracle] fulfilled consumer=${consumer} roundId=${roundId} beta=0x${betaHex} tx=${txHash}`
+      );
     } catch (err) {
-      this.processed.delete(roundId);
-      console.error(`[oracle] failed roundId=${roundId}:`, err);
+      this.processed.delete(dedupeKey);
+      console.error(`[oracle] failed consumer=${consumer} roundId=${roundId}:`, err);
     }
   }
 }
