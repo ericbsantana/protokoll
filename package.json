@@ -1,0 +1,25 @@
+{
+  "name": "randnad",
+  "version": "0.1.0",
+  "description": "Monad-native EC-VRF oracle - built from first principles",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc --noEmit",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "markdown-it-mathjax3": "^4.3.2",
+    "typescript": "^5.7.3",
+    "vitepress": "^1.6.3",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.7.0",
+    "viem": "^2.21.54"
+  }
+}
