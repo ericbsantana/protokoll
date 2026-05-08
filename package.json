@@ -1,27 +1,12 @@
 {
   "name": "protokoll",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "EC-VRF oracle for EVM chains - built from first principles",
-  "type": "module",
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "build": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "@types/node": "^25.6.0",
-    "typescript": "^6.0.3",
-    "vite": "^6.0.0",
-    "vitest": "^4.1.5"
-  },
-  "dependencies": {
-    "@noble/curves": "^2.2.0",
-    "viem": "^2.48.7"
-  },
+  "private": true,
   "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
+  "scripts": {
+    "test": "pnpm -r test",
+    "build:docs": "pnpm --filter @protokoll/docs build",
+    "dev:docs": "pnpm --filter @protokoll/docs dev"
   }
 }

@@ -11,7 +11,7 @@ import {
   roundIdBytes,
   truncateHex,
 } from './demo'
-import { generateOracleProof } from '../../../../src/oracle/proof'
+import { generateOracleProof } from '../../../../protokoll/src/oracle/proof'
 
 describe('encodeRoundId', () => {
   test('encodes ASCII string and right-pads to 32 bytes', () => {

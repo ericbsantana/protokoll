@@ -5,7 +5,7 @@
 [![rounds fulfilled](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ericbsantana/protokoll/main/.github/badges/rounds.json)](https://testnet.monadexplorer.com/address/0x9c46878D6736eDC7eAF135DB6B3B2A9Dab2A756F)
 [![stars](https://img.shields.io/github/stars/ericbsantana/protokoll?style=flat&color=yellow)](https://github.com/ericbsantana/protokoll/stargazers)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![solidity](https://img.shields.io/badge/solidity-0.8.28-363636?logo=solidity)](src/contracts)
+[![solidity](https://img.shields.io/badge/solidity-0.8.28-363636?logo=solidity)](packages/protokoll/src/contracts)
 [![network](https://img.shields.io/badge/network-Monad%20testnet-9333ea)](https://docs.protokoll.dev/guide/deployments)
 
 An EC-VRF oracle for EVM chains. The oracle runs off-chain under a single BLS12-381 key and the on-chain verifier checks the DLEQ proof against the EIP-2537 precompiles. One key holder, no committee, no DKG.
@@ -68,22 +68,26 @@ Exactly one `β` is valid for each `(k, roundId)`. The verifier rejects anything
 ## Project layout
 
 ```
-src/
-  contracts/   Solidity verifier, adapter, consumer interface
-  oracle/      TypeScript proof generation + viem-based service
-  math/        BLS12-381 from scratch (used by tests)
-  scripts/     keygen, fixture refresh, ad-hoc proof emission
-script/        Forge deploy scripts
-test/          Foundry tests (Solidity) + vitest tests (TypeScript)
-docs/          VitePress site (docs.protokoll.dev)
-Makefile       One-command workflows
+packages/
+  protokoll/        @protokoll/core - contracts, oracle, math
+    src/
+      contracts/    Solidity verifier, adapter, consumer interface
+      oracle/       TypeScript proof generation + viem-based service
+      math/         BLS12-381 from scratch (used by tests)
+      scripts/      keygen, fixture refresh, ad-hoc proof emission
+    script/         Forge deploy scripts
+    test/           Foundry tests (Solidity) + vitest tests (TypeScript)
+    foundry.toml
+  docs/             @protokoll/docs - VitePress site (docs.protokoll.dev)
+Makefile            One-command workflows
+pnpm-workspace.yaml Workspace config
 ```
 
 ## Local development
 
 ```bash
+git submodule update --init --recursive   # pulls forge-std under packages/protokoll/lib
 pnpm install
-forge install                  # pulls lib/forge-std submodule
 
 make test                      # forge + vitest
 make refresh                   # regenerate VRF fixtures, run tests, refresh gas snapshot

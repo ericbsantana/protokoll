@@ -4,9 +4,9 @@ import {
   G1_GENERATOR,
   scalarMul,
   type AffinePoint,
-} from '../../../../src/math/curve'
-import { encodePoint } from '../../../../src/oracle/proof'
-import type { OracleProof } from '../../../../src/oracle/proof'
+} from '../../../../protokoll/src/math/curve'
+import { encodePoint } from '../../../../protokoll/src/oracle/proof'
+import type { OracleProof } from '../../../../protokoll/src/oracle/proof'
 
 // Demo private key. Hardcoded so Y = k·G is stable across page reloads.
 // Leading byte 0x42 keeps the value below the BLS12-381 G1 group order

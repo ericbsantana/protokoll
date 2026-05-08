@@ -243,7 +243,7 @@ import {
   truncateHex,
 } from '../lib/demo'
 // Cross-tree import. Allowed by vite.server.fs.allow in config.ts.
-import { generateOracleProof } from '../../../../src/oracle/proof'
+import { generateOracleProof } from '../../../../protokoll/src/oracle/proof'
 import HexDecode from './HexDecode.vue'
 
 // Demo "requester" address - in a real round this is the consumer contract.

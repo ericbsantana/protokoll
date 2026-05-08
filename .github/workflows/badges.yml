@@ -23,7 +23,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: npx tsx src/scripts/fetchStats.ts
+      - run: npx tsx packages/protokoll/src/scripts/fetchStats.ts
 
       - name: commit badge if changed
         run: |

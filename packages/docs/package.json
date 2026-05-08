@@ -6,18 +6,15 @@
   "scripts": {
     "dev": "vitepress dev --port 9381",
     "build": "vitepress build",
-    "preview": "vitepress preview --port 9381"
+    "preview": "vitepress preview --port 9381",
+    "test": "vitest run"
   },
   "devDependencies": {
     "markdown-it-mathjax3": "^5.2.0",
-    "vitepress": "^1.6.4"
+    "vitepress": "^1.6.4",
+    "vitest": "^4.1.5"
   },
   "dependencies": {
     "@noble/curves": "^2.2.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }

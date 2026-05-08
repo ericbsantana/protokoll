@@ -8,10 +8,13 @@ on:
 jobs:
   forge:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/protokoll
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          submodules: recursive # lib/forge-std is a git submodule
+          submodules: recursive # forge-std submodule under packages/protokoll/lib
       - uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # v1
       - run: forge --version
       - run: forge build --sizes
@@ -28,4 +31,4 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test
+      - run: pnpm -r test

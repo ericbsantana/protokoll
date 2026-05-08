@@ -5,6 +5,6 @@ cache/
 .env
 .env.local
 broadcast
-docs/.vitepress/dist
-docs/.vitepress/cache
+packages/docs/.vitepress/dist
+packages/docs/.vitepress/cache
 internal/

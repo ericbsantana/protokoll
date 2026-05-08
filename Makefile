@@ -24,6 +24,9 @@
 SHELL := /usr/bin/env bash
 .SHELLFLAGS := -eu -o pipefail -c
 
+# Path to the core package (contracts, oracle, math, scripts, tests).
+CORE := packages/protokoll
+
 # ── Network selection ─────────────────────────────────────────────────────────
 # Simple `:=` assignment: command line can override (`make NETWORK=mainnet`),
 # but environment variables cannot. Default is testnet.
@@ -39,7 +42,7 @@ else
 endif
 
 # ── Secret loading ────────────────────────────────────────────────────────────
-# Load only the three keys we actually need from .env, and unset any RPC-related
+# Load only the keys we actually need from .env, and unset any RPC-related
 # vars that might otherwise be picked up by forge or cast. Pass --rpc-url with
 # the literal URL (not a foundry.toml alias) so there is one source of truth.
 LOAD_SECRETS = \
@@ -69,19 +72,19 @@ help:
 test: test-forge test-vitest ## Run forge + vitest suites
 
 test-forge: ## Run Foundry tests
-	forge test
+	cd $(CORE) && forge test
 
 test-vitest: ## Run vitest suites
-	npx vitest run
+	pnpm --filter @protokoll/core test
 
 fixtures: ## Regenerate VRF fixtures (rewrites the test files in place)
-	npx tsx src/scripts/refreshFixtures.ts
+	cd $(CORE) && npx tsx src/scripts/refreshFixtures.ts
 
 keygen: ## Generate a fresh oracle BLS12-381 keypair (k, Y=k·G)
-	@npx tsx src/scripts/genOracleKey.ts
+	@cd $(CORE) && npx tsx src/scripts/genOracleKey.ts
 
 snapshot: ## Refresh .gas-snapshot
-	forge snapshot
+	cd $(CORE) && forge snapshot
 
 refresh: fixtures test-forge snapshot ## Full DST/key change workflow: fixtures + tests + snapshot
 	@echo "✓ fixtures regenerated, forge tests pass, gas snapshot refreshed"
@@ -89,13 +92,13 @@ refresh: fixtures test-forge snapshot ## Full DST/key change workflow: fixtures 
 deploy-dryrun: ## Simulate deploy on NETWORK without broadcasting
 	@echo "→ network: $(NETWORK)  rpc: $(RPC_URL)"
 	@$(LOAD_SECRETS) \
-	forge script script/Deploy.s.sol --rpc-url $(RPC_URL)
+	cd $(CORE) && forge script script/Deploy.s.sol --rpc-url $(RPC_URL)
 
 deploy-broadcast: ## Broadcast deploy on NETWORK. REQUIRES funded PRIVATE_KEY in .env
 	@echo "→ network: $(NETWORK)  rpc: $(RPC_URL)"
 	@$(LOAD_SECRETS) \
 	if [ -z "$$PRIVATE_KEY" ]; then echo "PRIVATE_KEY missing from .env"; exit 1; fi; \
-	forge script script/Deploy.s.sol \
+	cd $(CORE) && forge script script/Deploy.s.sol \
 	  --rpc-url $(RPC_URL) \
 	  --broadcast \
 	  --private-key "$$PRIVATE_KEY"
@@ -124,7 +127,7 @@ oracle: ## Run the oracle service against NETWORK's adapter (long-running)
 	if [ -z "$$ORACLE_PRIVATE_KEY" ];then echo "ORACLE_PRIVATE_KEY missing (or PRIVATE_KEY fallback) from .env"; exit 1; fi; \
 	if [ -z "$$ADAPTER_ADDRESS" ];   then echo "ADAPTER_ADDRESS missing from .env"; exit 1; fi; \
 	echo "→ adapter: $$ADAPTER_ADDRESS"; \
-	CHAIN_ID=$(CHAIN_ID) npx tsx src/oracle/index.ts
+	cd $(CORE) && CHAIN_ID=$(CHAIN_ID) npx tsx src/oracle/index.ts
 
 smoke-deploy: ## Deploy a SmokeConsumer wired to ADAPTER (defaults to .env ADAPTER_ADDRESS)
 	@$(LOAD_SECRETS) \
@@ -133,7 +136,7 @@ smoke-deploy: ## Deploy a SmokeConsumer wired to ADAPTER (defaults to .env ADAPT
 	else echo "set ADAPTER=0x... or ADAPTER_ADDRESS in .env"; exit 1; fi; \
 	if [ -z "$$PRIVATE_KEY" ]; then echo "PRIVATE_KEY missing from .env"; exit 1; fi; \
 	echo "→ deploying SmokeConsumer wired to $$SMOKE_ADAPTER"; \
-	forge script script/DeploySmoke.s.sol \
+	cd $(CORE) && forge script script/DeploySmoke.s.sol \
 	  --rpc-url $(RPC_URL) \
 	  --broadcast \
 	  --private-key "$$PRIVATE_KEY"
@@ -165,4 +168,4 @@ smoke-status: ## Read CONSUMER.lastRoundId / lastBeta. Pass CONSUMER=0x..
 	cast call $(CONSUMER) "lastBeta()(bytes32)" --rpc-url $(RPC_URL)
 
 clean: ## Remove forge build artifacts
-	forge clean
+	cd $(CORE) && forge clean
