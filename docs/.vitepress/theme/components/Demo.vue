@@ -304,6 +304,12 @@ const canContinue = computed(
 function continueToNext() {
   if (!canContinue.value) return
   currentStep.value++
+  nextTick(() => {
+    if (typeof window === 'undefined') return
+    const stepEls = demoRoot.value?.querySelectorAll('.step')
+    const target = stepEls?.[currentStep.value - 1]
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
 }
 
 const inputError = computed(() => {
@@ -463,6 +469,9 @@ function stepStateClass(n) {
   border-radius: 6px;
   background: var(--vp-c-bg-soft);
   transition: opacity 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  /* Leave room for the sticky nav so scrollIntoView doesn't tuck the */
+  /* step heading underneath it. */
+  scroll-margin-top: 80px;
 }
 
 .step.is-pending {
