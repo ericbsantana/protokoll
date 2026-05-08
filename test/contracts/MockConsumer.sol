@@ -18,8 +18,47 @@ contract MockConsumer is IRandomnessAdapter {
         adapter.requestRandomness(roundId);
     }
 
-    function fulfillRandomness(bytes32 roundId, bytes32 beta) external override {
+    function fulfillRandomness(bytes32 roundId, bytes32 beta) external virtual override {
         lastRoundId = roundId;
         lastBeta    = beta;
+    }
+}
+
+// Griefer: burns gas in the callback so we can verify the cap is enforced.
+contract MockGriefer is MockConsumer {
+    constructor(address adapter_) MockConsumer(adapter_) {}
+
+    function fulfillRandomness(bytes32 /* roundId */, bytes32 /* beta */) external pure override {
+        // Unbounded loop - exhausts whatever gas the caller forwards.
+        // With CALLBACK_GAS_LIMIT in place this OOGs the callback frame,
+        // not the fulfill() outer frame.
+        uint256 i;
+        while (true) { unchecked { i++; } }
+    }
+}
+
+// Reverter: reverts in the callback. fulfill() must succeed and emit
+// callbackOk=false so off-chain monitors can detect the failure.
+contract MockReverter is MockConsumer {
+    constructor(address adapter_) MockConsumer(adapter_) {}
+
+    function fulfillRandomness(bytes32 /* roundId */, bytes32 /* beta */) external pure override {
+        revert("intentional callback revert");
+    }
+}
+
+// ReturnBomb: returns a huge byte array. Forces the EVM to allocate
+// large returndata. fulfill() must NOT copy it into memory.
+contract MockReturnBomb is MockConsumer {
+    constructor(address adapter_) MockConsumer(adapter_) {}
+
+    function fulfillRandomness(bytes32 /* roundId */, bytes32 /* beta */) external pure override {
+        // Build and return ~64 KB of data. Without the (0,0) output buffer in
+        // the adapter's assembly call, this would cause a returndatacopy of
+        // matching size in the caller frame, inflating gas dramatically.
+        bytes memory bomb = new bytes(64 * 1024);
+        assembly {
+            return(add(bomb, 0x20), mload(bomb))
+        }
     }
 }

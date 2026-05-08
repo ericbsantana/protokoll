@@ -25,13 +25,21 @@ contract MonadVRFAdapter {
     // EIP-2537 128-byte public key of the oracle. Set once at deploy.
     bytes public oraclePublicKey;
 
+    // Maximum gas forwarded to the consumer's fulfillRandomness callback.
+    // A malicious or buggy consumer cannot consume more than this — fulfill()
+    // remains cheap to call regardless of what the callback does. EIP-150
+    // means the caller of fulfill() must supply at least
+    // ~CALLBACK_GAS_LIMIT * 64/63 above the verifier overhead for the
+    // callback to actually receive the full budget.
+    uint256 public constant CALLBACK_GAS_LIMIT = 200_000;
+
     // Keyed on requestKey(consumer, roundId). True while a request is pending.
     mapping(bytes32 => bool) public pendingRequests;
     // Keyed on requestKey(consumer, roundId). True once fulfilled.
     mapping(bytes32 => bool) public fulfilled;
 
     event RandomnessRequested(bytes32 indexed roundId, address indexed requester);
-    event RandomnessFulfilled(address indexed consumer, bytes32 indexed roundId, bytes32 beta);
+    event RandomnessFulfilled(address indexed consumer, bytes32 indexed roundId, bytes32 beta, bool callbackOk);
 
     error AlreadyRequested(address consumer, bytes32 roundId);
     error AlreadyFulfilled(address consumer, bytes32 roundId);
@@ -80,8 +88,23 @@ contract MonadVRFAdapter {
         fulfilled[key] = true;
         delete pendingRequests[key];
 
-        emit RandomnessFulfilled(consumer, roundId, beta);
+        // Cap forwarded gas; ignore returndata to prevent return-bomb griefing.
+        // Inline assembly explicitly passes (0, 0) for the output buffer so the
+        // EVM never copies returndata into memory regardless of size.
+        bytes memory payload = abi.encodeCall(IRandomnessAdapter.fulfillRandomness, (roundId, beta));
+        bool ok;
+        assembly {
+            ok := call(
+                CALLBACK_GAS_LIMIT,
+                consumer,
+                0,
+                add(payload, 0x20),
+                mload(payload),
+                0,
+                0
+            )
+        }
 
-        try IRandomnessAdapter(consumer).fulfillRandomness(roundId, beta) {} catch {}
+        emit RandomnessFulfilled(consumer, roundId, beta, ok);
     }
 }
