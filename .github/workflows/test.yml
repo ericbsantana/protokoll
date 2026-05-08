@@ -13,6 +13,15 @@ jobs:
         with:
           submodules: recursive # lib/forge-std is a git submodule
       - uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # v1
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.svm
+            cache
+            out
+          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'lib/**', 'src/**/*.sol', 'test/**/*.sol', 'script/**/*.sol') }}
+          restore-keys: |
+            ${{ runner.os }}-foundry-
       - run: forge --version
       - run: forge build --sizes
       - run: forge test -vvv
