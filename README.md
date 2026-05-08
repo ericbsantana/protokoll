@@ -1,4 +1,4 @@
-# <p align="center">protokoll</p>
+<h1 align="center">protokoll</h1>
 
 [![tests](https://github.com/ericbsantana/protokoll/actions/workflows/test.yml/badge.svg)](https://github.com/ericbsantana/protokoll/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/tag/ericbsantana/protokoll?label=release&color=blue)](https://github.com/ericbsantana/protokoll/tags)
