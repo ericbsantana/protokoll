@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity 0.8.28;
 
 import {IRandomnessAdapter} from "../../src/contracts/interfaces/IRandomnessAdapter.sol";
 import {MonadVRFAdapter} from "../../src/contracts/MonadVRFAdapter.sol";

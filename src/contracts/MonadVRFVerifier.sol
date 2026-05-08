@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity 0.8.28;
 
 // DLEQ verifier - H is computed on-chain from roundId via RFC 9380 hash-to-curve.
 // No trust assumption on the oracle for the H value.
@@ -36,6 +36,13 @@ contract MonadVRFVerifier {
     bytes constant DST = "randnad-v1";
 
     /// @notice Verify a DLEQ proof. H = hash_to_curve(roundId) is computed here.
+    /// @dev Security relies on EIP-2537 G1MSM (precompile 0x0c) performing
+    ///      subgroup-membership and on-curve checks on its inputs (per
+    ///      EIP-2537 §"Subgroup checks": MSMs MUST perform a subgroup check
+    ///      and MUST return an error on any input that fails it). Both
+    ///      `publicKey` and `gamma` are consumed via G1MSM here, so any
+    ///      small-subgroup point causes the precompile to error and
+    ///      verification to fail.
     /// @param publicKey  Y = k·G, EIP-2537 128-byte G1 point
     /// @param roundId    Round identifier - used to derive H on-chain
     /// @param gamma      γ = k·H, EIP-2537 128-byte G1 point
@@ -66,8 +73,8 @@ contract MonadVRFVerifier {
 
     // ── RFC 9380 hash-to-curve ────────────────────────────────────────────────
 
-    function _hashToCurve(bytes memory msg) internal view returns (bytes memory) {
-        bytes memory uniform = _expandMessageXmd(msg); // 128 bytes
+    function _hashToCurve(bytes memory roundIdBytes) internal view returns (bytes memory) {
+        bytes memory uniform = _expandMessageXmd(roundIdBytes); // 128 bytes
 
         // Extract four 32-byte words: uniform = u0hi||u0lo||u1hi||u1lo
         bytes32 u0hi;
@@ -101,11 +108,11 @@ contract MonadVRFVerifier {
 
     // RFC 9380 §5.3.1 - expand_message_xmd with SHA-256, output 128 bytes
     // ell = ceil(128/32) = 4 → produces b1||b2||b3||b4
-    function _expandMessageXmd(bytes memory msg) internal view returns (bytes memory) {
+    function _expandMessageXmd(bytes memory roundIdBytes) internal view returns (bytes memory) {
         bytes memory DST_prime = abi.encodePacked(DST, uint8(DST.length));
 
-        // msg_prime = Z_pad(64) || msg || I2OSP(128,2) || I2OSP(0,1) || DST_prime
-        bytes32 b0 = sha256(abi.encodePacked(new bytes(64), msg, uint16(128), uint8(0), DST_prime));
+        // msg_prime = Z_pad(64) || roundIdBytes || I2OSP(128,2) || I2OSP(0,1) || DST_prime
+        bytes32 b0 = sha256(abi.encodePacked(new bytes(64), roundIdBytes, uint16(128), uint8(0), DST_prime));
 
         bytes32 b1 = sha256(abi.encodePacked(b0, uint8(1), DST_prime));
         bytes32 b2 = sha256(abi.encodePacked(b0 ^ b1, uint8(2), DST_prime));
