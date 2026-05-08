@@ -76,6 +76,18 @@
 	cursor: text;
 }
 
+/* VitePress default desaturates the dropdown trigger's inner text on  */
+/* hover (parent goes brand, inner .text reverts to text-2). Keep it   */
+/* on brand so the Guide trigger matches the other nav items.          */
+.VPNavBarMenuGroup.VPFlyout:hover .text,
+.VPNavBarMenuGroup.VPFlyout.active:hover .text {
+	color: var(--vp-c-brand-1);
+}
+
+.VPNavBarMenuGroup.VPFlyout:hover .text-icon {
+	color: var(--vp-c-brand-1);
+}
+
 .VPNavBarTitle .title {
 	font-family: "Fira Code", monospace;
 	font-weight: 500;
