@@ -17,12 +17,14 @@ contract RequestRandomness is Script {
         string  memory id   = vm.envString("ROUND_ID");
 
         bytes32 roundId = bytes32(bytes(id));
+        uint256 fee = MonadVRFAdapter(adapterAddr).requestFee();
 
         vm.startBroadcast();
-        MonadVRFAdapter(adapterAddr).requestRandomness(roundId);
+        MonadVRFAdapter(adapterAddr).requestRandomness{value: fee}(roundId);
         vm.stopBroadcast();
 
         console.log("Requested randomness for round:", id);
         console.logBytes32(roundId);
+        console.log("Paid fee (wei):", fee);
     }
 }

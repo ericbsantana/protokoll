@@ -25,6 +25,12 @@ contract MonadVRFAdapter {
     // EIP-2537 128-byte public key of the oracle. Set once at deploy.
     bytes public oraclePublicKey;
 
+    // Flat fee charged per request, paid in MON. Fully forwarded to whoever
+    // submits the matching fulfill(). Set at construction; immutable.
+    // A zero fee means the service is free (suitable for testing or subsidised
+    // deployments) — no value is transferred and no escrow is touched.
+    uint256 public immutable requestFee;
+
     // Maximum gas forwarded to the consumer's fulfillRandomness callback.
     // A malicious or buggy consumer cannot consume more than this — fulfill()
     // remains cheap to call regardless of what the callback does. EIP-150
@@ -37,6 +43,9 @@ contract MonadVRFAdapter {
     mapping(bytes32 => bool) public pendingRequests;
     // Keyed on requestKey(consumer, roundId). True once fulfilled.
     mapping(bytes32 => bool) public fulfilled;
+    // Per-request fee escrow, keyed on requestKey(consumer, roundId). Cleared
+    // on fulfill before the value is transferred to the fulfiller (CEI).
+    mapping(bytes32 => uint256) public escrow;
 
     event RandomnessRequested(bytes32 indexed roundId, address indexed requester);
     event RandomnessFulfilled(address indexed consumer, bytes32 indexed roundId, bytes32 beta, bool callbackOk);
@@ -45,10 +54,13 @@ contract MonadVRFAdapter {
     error AlreadyFulfilled(address consumer, bytes32 roundId);
     error NoPendingRequest(address consumer, bytes32 roundId);
     error InvalidProof();
+    error IncorrectFee(uint256 sent, uint256 expected);
+    error FeeTransferFailed();
 
-    constructor(address verifier_, bytes memory oraclePublicKey_) {
+    constructor(address verifier_, bytes memory oraclePublicKey_, uint256 requestFee_) {
         verifier = MonadVRFVerifier(verifier_);
         oraclePublicKey = oraclePublicKey_;
+        requestFee = requestFee_;
     }
 
     /// @notice Compute the storage key for a (consumer, roundId) pair.
@@ -60,11 +72,15 @@ contract MonadVRFAdapter {
 
     /// @notice Request a verifiable random number for roundId.
     ///         The caller must implement IRandomnessAdapter to receive the result.
-    function requestRandomness(bytes32 roundId) external {
+    ///         msg.value MUST exactly equal requestFee (over- or under-payment reverts;
+    ///         this avoids dust accumulation and refund logic).
+    function requestRandomness(bytes32 roundId) external payable {
+        if (msg.value != requestFee) revert IncorrectFee(msg.value, requestFee);
         bytes32 key = requestKey(msg.sender, roundId);
         if (pendingRequests[key]) revert AlreadyRequested(msg.sender, roundId);
         if (fulfilled[key]) revert AlreadyFulfilled(msg.sender, roundId);
         pendingRequests[key] = true;
+        if (msg.value > 0) escrow[key] = msg.value;
         emit RandomnessRequested(roundId, msg.sender);
     }
 
@@ -85,8 +101,11 @@ contract MonadVRFAdapter {
 
         bytes32 beta = sha256(abi.encodePacked(gamma));
 
+        // CEI: clear all state related to this request before any external call.
         fulfilled[key] = true;
         delete pendingRequests[key];
+        uint256 fee = escrow[key];
+        if (fee > 0) delete escrow[key];
 
         // Cap forwarded gas; ignore returndata to prevent return-bomb griefing.
         // Inline assembly explicitly passes (0, 0) for the output buffer so the
@@ -106,5 +125,14 @@ contract MonadVRFAdapter {
         }
 
         emit RandomnessFulfilled(consumer, roundId, beta, ok);
+
+        // Pay the fulfiller. State is already cleared, so a reentrant fulfill()
+        // for the same (consumer, roundId) reverts on the AlreadyFulfilled check.
+        // If the fulfiller cannot receive MON (no payable fallback), the entire
+        // tx reverts and the round stays pending for another fulfiller to take.
+        if (fee > 0) {
+            (bool sent, ) = msg.sender.call{value: fee}("");
+            if (!sent) revert FeeTransferFailed();
+        }
     }
 }

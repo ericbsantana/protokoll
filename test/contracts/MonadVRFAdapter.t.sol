@@ -16,17 +16,27 @@ contract MonadVRFAdapterTest is Test {
     MonadVRFAdapter  adapter;
     MockConsumer     consumer;
 
-    bytes32 constant ROUND_ID = bytes32("round-1");
-    bytes constant PK         = hex"000000000000000000000000000000000ce3b57b791798433fd323753489cac9bca43b98deaafaed91f4cb010730ae1e38b186ccd37a09b8aed62ce23b699c4800000000000000000000000000000000008c346228e4482ec20a2bf7d5a2fe74ebf3c79b912d1b0ba977a873b66f7a9b8b42585a78c0c21d66da6a15767efdb1";
-    bytes constant GAMMA      = hex"000000000000000000000000000000000bb381154dc86a2b91eb3710aa412ea071e91d5122c976b0e8775474f5c5911667253293f9cdcdd05887adc908a5f4d500000000000000000000000000000000016c6b67b701a7ae42421582570c9fedef994318c7656659169985792799f39a3c2ed6b8285d6312e5179084713314da";
-    uint256 constant C        = 0x5973b13f00290106fe0be3dff5d921507ddb1ee0223870bb74f58fb9863f8662;
-    uint256 constant S        = 0x0b61101267947db0fe93d38a4cddcecb3c7988a9d4940f280ab23c1f9785ef59;
-    bytes32 constant BETA     = 0xcd851f1243dc4ae51c01c5688fd087556f5a1b44e65bdd4ac53408f89f513abd;
+    // Allow this test contract to receive fee payments when it acts as the fulfiller.
+    receive() external payable {}
+
+    bytes32 constant ROUND_ID    = bytes32("round-1");
+    uint256 constant REQUEST_FEE = 0.001 ether;
+    bytes constant PK            = hex"000000000000000000000000000000000ce3b57b791798433fd323753489cac9bca43b98deaafaed91f4cb010730ae1e38b186ccd37a09b8aed62ce23b699c4800000000000000000000000000000000008c346228e4482ec20a2bf7d5a2fe74ebf3c79b912d1b0ba977a873b66f7a9b8b42585a78c0c21d66da6a15767efdb1";
+    bytes constant GAMMA         = hex"000000000000000000000000000000000bb381154dc86a2b91eb3710aa412ea071e91d5122c976b0e8775474f5c5911667253293f9cdcdd05887adc908a5f4d500000000000000000000000000000000016c6b67b701a7ae42421582570c9fedef994318c7656659169985792799f39a3c2ed6b8285d6312e5179084713314da";
+    uint256 constant C           = 0x5973b13f00290106fe0be3dff5d921507ddb1ee0223870bb74f58fb9863f8662;
+    uint256 constant S           = 0x0b61101267947db0fe93d38a4cddcecb3c7988a9d4940f280ab23c1f9785ef59;
+    bytes32 constant BETA        = 0xcd851f1243dc4ae51c01c5688fd087556f5a1b44e65bdd4ac53408f89f513abd;
 
     function setUp() public {
         verifier = new MonadVRFVerifier();
-        adapter  = new MonadVRFAdapter(address(verifier), PK);
+        adapter  = new MonadVRFAdapter(address(verifier), PK, REQUEST_FEE);
         consumer = new MockConsumer(address(adapter));
+        vm.deal(address(consumer), 10 ether);
+    }
+
+    function _fundedConsumer() internal returns (MockConsumer c) {
+        c = new MockConsumer(address(adapter));
+        vm.deal(address(c), 10 ether);
     }
 
     function _key(address c, bytes32 r) internal view returns (bytes32) {
@@ -34,7 +44,7 @@ contract MonadVRFAdapterTest is Test {
     }
 
     function test_fullFlow() public {
-        consumer.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
 
         bytes32 key = _key(address(consumer), ROUND_ID);
         assertEq(adapter.pendingRequests(key), true);
@@ -52,27 +62,27 @@ contract MonadVRFAdapterTest is Test {
     }
 
     function test_anyoneCanFulfill() public {
-        consumer.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
         vm.prank(address(0xdead));
         adapter.fulfill(address(consumer), ROUND_ID, GAMMA, C, S);
         assertEq(consumer.lastBeta(), BETA);
     }
 
     function test_duplicateRequest_reverts() public {
-        consumer.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
         vm.expectRevert(
             abi.encodeWithSelector(MonadVRFAdapter.AlreadyRequested.selector, address(consumer), ROUND_ID)
         );
-        consumer.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
     }
 
     function test_requestAfterFulfill_reverts() public {
-        consumer.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
         adapter.fulfill(address(consumer), ROUND_ID, GAMMA, C, S);
         vm.expectRevert(
             abi.encodeWithSelector(MonadVRFAdapter.AlreadyFulfilled.selector, address(consumer), ROUND_ID)
         );
-        consumer.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
     }
 
     function test_fulfillWithoutRequest_reverts() public {
@@ -83,7 +93,7 @@ contract MonadVRFAdapterTest is Test {
     }
 
     function test_replayFulfill_reverts() public {
-        consumer.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
         adapter.fulfill(address(consumer), ROUND_ID, GAMMA, C, S);
         vm.expectRevert(
             abi.encodeWithSelector(MonadVRFAdapter.AlreadyFulfilled.selector, address(consumer), ROUND_ID)
@@ -92,7 +102,7 @@ contract MonadVRFAdapterTest is Test {
     }
 
     function test_invalidProof_reverts() public {
-        consumer.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
         vm.expectRevert(MonadVRFAdapter.InvalidProof.selector);
         adapter.fulfill(address(consumer), ROUND_ID, GAMMA, C + 1, S);
     }
@@ -102,10 +112,11 @@ contract MonadVRFAdapterTest is Test {
     function test_squatCannotRedirect() public {
         // Squatter races ahead and registers the same roundId from a different address.
         MockConsumer squatter = new MockConsumer(address(adapter));
-        squatter.requestRandomness(ROUND_ID);
+        vm.deal(address(squatter), 1 ether);
+        squatter.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
 
         // Legitimate consumer also registers — must succeed (different storage slot).
-        consumer.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
 
         // Both have independent pending entries.
         assertTrue(adapter.pendingRequests(_key(address(squatter), ROUND_ID)));
@@ -124,9 +135,10 @@ contract MonadVRFAdapterTest is Test {
 
     function test_twoConsumersSameRoundId_independentlyFulfilled() public {
         MockConsumer other = new MockConsumer(address(adapter));
+        vm.deal(address(other), 1 ether);
 
-        consumer.requestRandomness(ROUND_ID);
-        other.requestRandomness(ROUND_ID);
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
+        other.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
 
         // Same proof works for both — depends on roundId only.
         adapter.fulfill(address(consumer), ROUND_ID, GAMMA, C, S);
@@ -143,7 +155,8 @@ contract MonadVRFAdapterTest is Test {
 
     function test_griefingConsumer_doesNotConsumeFulfillerGas() public {
         MockGriefer griefer = new MockGriefer(address(adapter));
-        griefer.requestRandomness(ROUND_ID);
+        vm.deal(address(griefer), 1 ether);
+        griefer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
 
         // Snapshot balances/gas around the fulfill call.
         uint256 gasBefore = gasleft();
@@ -161,7 +174,8 @@ contract MonadVRFAdapterTest is Test {
 
     function test_revertingConsumer_emitsCallbackFalse_andSettles() public {
         MockReverter reverter = new MockReverter(address(adapter));
-        reverter.requestRandomness(ROUND_ID);
+        vm.deal(address(reverter), 1 ether);
+        reverter.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
 
         vm.expectEmit(true, true, false, true);
         emit MonadVRFAdapter.RandomnessFulfilled(address(reverter), ROUND_ID, BETA, false);
@@ -176,7 +190,8 @@ contract MonadVRFAdapterTest is Test {
 
     function test_returnBomb_doesNotInflateFulfillerGas() public {
         MockReturnBomb bomb = new MockReturnBomb(address(adapter));
-        bomb.requestRandomness(ROUND_ID);
+        vm.deal(address(bomb), 1 ether);
+        bomb.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
 
         uint256 gasBefore = gasleft();
         adapter.fulfill(address(bomb), ROUND_ID, GAMMA, C, S);
@@ -188,5 +203,105 @@ contract MonadVRFAdapterTest is Test {
         // Without the assembly fix this test typically blows past 600k.
         assertLt(gasUsed, 500_000, "return-bomb inflated fulfill gas");
         assertTrue(adapter.fulfilled(_key(address(bomb), ROUND_ID)));
+    }
+
+    // ── H3: fee enforcement, escrow, fulfiller payment ──────────────────────
+
+    function test_underpayment_reverts() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(MonadVRFAdapter.IncorrectFee.selector, REQUEST_FEE - 1, REQUEST_FEE)
+        );
+        consumer.requestRandomness{value: REQUEST_FEE - 1}(ROUND_ID);
+    }
+
+    function test_overpayment_reverts() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(MonadVRFAdapter.IncorrectFee.selector, REQUEST_FEE + 1, REQUEST_FEE)
+        );
+        consumer.requestRandomness{value: REQUEST_FEE + 1}(ROUND_ID);
+    }
+
+    function test_fulfillerReceivesFee() public {
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
+        assertEq(adapter.escrow(_key(address(consumer), ROUND_ID)), REQUEST_FEE);
+
+        address fulfiller = address(0xfeed);
+        uint256 balBefore = fulfiller.balance;
+
+        vm.prank(fulfiller);
+        adapter.fulfill(address(consumer), ROUND_ID, GAMMA, C, S);
+
+        assertEq(fulfiller.balance - balBefore, REQUEST_FEE);
+        assertEq(adapter.escrow(_key(address(consumer), ROUND_ID)), 0);
+    }
+
+    function test_zeroFeeDeployment_acceptsZeroValue() public {
+        MonadVRFAdapter freeAdapter = new MonadVRFAdapter(address(verifier), PK, 0);
+        MockConsumer freeConsumer  = new MockConsumer(address(freeAdapter));
+
+        // No vm.deal, no value forwarded.
+        freeConsumer.requestRandomness(ROUND_ID);
+        assertTrue(freeAdapter.pendingRequests(adapter.requestKey(address(freeConsumer), ROUND_ID)));
+
+        address fulfiller = address(0xc0de);
+        uint256 balBefore = fulfiller.balance;
+        vm.prank(fulfiller);
+        freeAdapter.fulfill(address(freeConsumer), ROUND_ID, GAMMA, C, S);
+
+        // Free service: no payment.
+        assertEq(fulfiller.balance, balBefore);
+    }
+
+    function test_zeroFeeDeployment_rejectsValue() public {
+        MonadVRFAdapter freeAdapter = new MonadVRFAdapter(address(verifier), PK, 0);
+        MockConsumer freeConsumer  = new MockConsumer(address(freeAdapter));
+        vm.deal(address(freeConsumer), 1 ether);
+
+        vm.expectRevert(abi.encodeWithSelector(MonadVRFAdapter.IncorrectFee.selector, 1, 0));
+        freeConsumer.requestRandomness{value: 1}(ROUND_ID);
+    }
+
+    function test_reentrantFulfillFromFulfiller_reverts() public {
+        consumer.requestRandomness{value: REQUEST_FEE}(ROUND_ID);
+
+        ReentrantFulfiller attacker = new ReentrantFulfiller(adapter, address(consumer), ROUND_ID, GAMMA, C, S);
+
+        // The fulfill triggers the fee transfer, which lands in attacker.receive(),
+        // which tries to re-enter fulfill() for the same (consumer, roundId).
+        // The reentrant call must hit the AlreadyFulfilled guard, which causes
+        // attacker.receive() to revert, which in turn reverts the outer fulfill
+        // (we treat a failed fee transfer as a revert via FeeTransferFailed).
+        vm.expectRevert(MonadVRFAdapter.FeeTransferFailed.selector);
+        attacker.attack();
+    }
+}
+
+// Helper for the reentrancy test: triggers fulfill, then on receive() of the
+// fee transfer it tries to re-enter fulfill on the same (consumer, roundId).
+contract ReentrantFulfiller {
+    MonadVRFAdapter public immutable adapter;
+    address public immutable consumer;
+    bytes32 public immutable roundId;
+    bytes public gamma;
+    uint256 public c;
+    uint256 public s;
+
+    constructor(MonadVRFAdapter a, address consumer_, bytes32 roundId_, bytes memory gamma_, uint256 c_, uint256 s_) {
+        adapter = a;
+        consumer = consumer_;
+        roundId = roundId_;
+        gamma = gamma_;
+        c = c_;
+        s = s_;
+    }
+
+    function attack() external {
+        adapter.fulfill(consumer, roundId, gamma, c, s);
+    }
+
+    receive() external payable {
+        // Reentrant attempt — must revert inside the adapter on AlreadyFulfilled,
+        // which propagates here as a failed call. We bubble up.
+        adapter.fulfill(consumer, roundId, gamma, c, s);
     }
 }

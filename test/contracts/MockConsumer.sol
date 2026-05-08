@@ -14,9 +14,12 @@ contract MockConsumer is IRandomnessAdapter {
         adapter = MonadVRFAdapter(adapter_);
     }
 
-    function requestRandomness(bytes32 roundId) external {
-        adapter.requestRandomness(roundId);
+    function requestRandomness(bytes32 roundId) external payable {
+        adapter.requestRandomness{value: msg.value}(roundId);
     }
+
+    // Allow receiving native MON (e.g. for tests that fund the consumer up-front).
+    receive() external payable {}
 
     function fulfillRandomness(bytes32 roundId, bytes32 beta) external virtual override {
         lastRoundId = roundId;
