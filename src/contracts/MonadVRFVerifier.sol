@@ -33,7 +33,7 @@ contract MonadVRFVerifier {
         hex"1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
 
     // Domain separation tag - MUST match oracle/proof.ts DST constant
-    bytes constant DST = "randnad-v1";
+    bytes constant DST = "protokoll-v1";
 
     /// @notice Verify a DLEQ proof. H = hash_to_curve(roundId) is computed here.
     /// @dev Security relies on EIP-2537 G1MSM (precompile 0x0c) performing

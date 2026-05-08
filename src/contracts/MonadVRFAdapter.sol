@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {IRandomnessAdapter} from "./interfaces/IRandomnessAdapter.sol";
 import {MonadVRFVerifier} from "./MonadVRFVerifier.sol";
 
-// Request/fulfill adapter for the randnad VRF oracle.
+// Request/fulfill adapter for the protokoll VRF oracle.
 //
 // Flow:
 //   1. Consumer calls requestRandomness(roundId)            - logged on-chain
@@ -39,11 +39,11 @@ contract MonadVRFAdapter {
     // Flat fee charged per request, paid in MON. Fully forwarded to whoever
     // submits the matching fulfill(). Set at construction; immutable.
     // A zero fee means the service is free (suitable for testing or subsidised
-    // deployments) — no value is transferred and no escrow is touched.
+    // deployments) - no value is transferred and no escrow is touched.
     uint256 public immutable requestFee;
 
     // Maximum gas forwarded to the consumer's fulfillRandomness callback.
-    // A malicious or buggy consumer cannot consume more than this — fulfill()
+    // A malicious or buggy consumer cannot consume more than this - fulfill()
     // remains cheap to call regardless of what the callback does. EIP-150
     // means the caller of fulfill() must supply at least
     // ~CALLBACK_GAS_LIMIT * 64/63 above the verifier overhead for the
@@ -69,14 +69,7 @@ contract MonadVRFAdapter {
     error FeeTransferFailed();
     error InvalidPublicKey();
 
-    constructor(
-        address verifier_,
-        bytes32 pk0_,
-        bytes32 pk1_,
-        bytes32 pk2_,
-        bytes32 pk3_,
-        uint256 requestFee_
-    ) {
+    constructor(address verifier_, bytes32 pk0_, bytes32 pk1_, bytes32 pk2_, bytes32 pk3_, uint256 requestFee_) {
         verifier = MonadVRFVerifier(verifier_);
         pk0 = pk0_;
         pk1 = pk1_;
@@ -84,7 +77,7 @@ contract MonadVRFAdapter {
         pk3 = pk3_;
         requestFee = requestFee_;
 
-        // Reject the identity (all-zero coordinates) — not a useful signing key.
+        // Reject the identity (all-zero coordinates) - not a useful signing key.
         if (pk0_ == bytes32(0) && pk1_ == bytes32(0) && pk2_ == bytes32(0) && pk3_ == bytes32(0)) {
             revert InvalidPublicKey();
         }
@@ -93,9 +86,7 @@ contract MonadVRFAdapter {
         // and on-curve checks at deploy time. Per EIP-2537 the precompile MUST
         // return an error on any input that fails the subgroup check, which we
         // surface here as InvalidPublicKey.
-        (bool ok, bytes memory out) = G1MSM.staticcall(
-            abi.encodePacked(pk0_, pk1_, pk2_, pk3_, bytes32(uint256(1)))
-        );
+        (bool ok, bytes memory out) = G1MSM.staticcall(abi.encodePacked(pk0_, pk1_, pk2_, pk3_, bytes32(uint256(1))));
         if (!ok || out.length != 128) revert InvalidPublicKey();
     }
 
@@ -155,15 +146,7 @@ contract MonadVRFAdapter {
         bytes memory payload = abi.encodeCall(IRandomnessAdapter.fulfillRandomness, (roundId, beta));
         bool ok;
         assembly {
-            ok := call(
-                CALLBACK_GAS_LIMIT,
-                consumer,
-                0,
-                add(payload, 0x20),
-                mload(payload),
-                0,
-                0
-            )
+            ok := call(CALLBACK_GAS_LIMIT, consumer, 0, add(payload, 0x20), mload(payload), 0, 0)
         }
 
         emit RandomnessFulfilled(consumer, roundId, beta, ok);
@@ -173,7 +156,7 @@ contract MonadVRFAdapter {
         // If the fulfiller cannot receive MON (no payable fallback), the entire
         // tx reverts and the round stays pending for another fulfiller to take.
         if (fee > 0) {
-            (bool sent, ) = msg.sender.call{value: fee}("");
+            (bool sent,) = msg.sender.call{value: fee}("");
             if (!sent) revert FeeTransferFailed();
         }
     }

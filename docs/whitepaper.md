@@ -1,8 +1,12 @@
-# randnad - Verifiable Randomness on Monad
+---
+title: Verifiable Randomness for the EVM
+---
+
+# <span class="brand">protokoll</span> - Verifiable Randomness for the EVM
 
 ## Abstract
 
-randnad is a Verifiable Random Function (VRF) oracle built for Monad testnet. It produces random numbers that are provably unbiased, deterministic, and publicly verifiable - without trusting the oracle. The system is implemented from first principles: finite field arithmetic, elliptic curve group operations, and a non-interactive DLEQ proof, all the way up to a Solidity verifier that uses EIP-2537 precompiles for on-chain BLS12-381 operations.
+<span class="brand">protokoll</span> is a Verifiable Random Function (VRF) oracle for EVM chains with EIP-2537 BLS12-381 precompiles. It produces random numbers that are provably unbiased, deterministic, and publicly verifiable - without trusting the oracle. The system is implemented from first principles: finite field arithmetic, elliptic curve group operations, and a non-interactive DLEQ proof, all the way up to a Solidity verifier that uses EIP-2537 precompiles for on-chain BLS12-381 operations. The current reference deployment is on Monad testnet ([Deployments](./guide/deployments)).
 
 ---
 
@@ -22,7 +26,7 @@ A VRF solves this by making the oracle **commit to a process** before seeing any
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                     MONAD TESTNET                        │
+│                       EVM CHAIN                          │
 │                                                          │
 │  ┌──────────────┐    ┌─────────────────┐                │
 │  │   Consumer   │    │  MonadVRFAdapter │                │
@@ -142,7 +146,7 @@ Consumer                Adapter               Verifier          Fulfiller
 
 ### 4.1 The Elliptic Curve Group
 
-randnad uses **BLS12-381**, a pairing-friendly elliptic curve defined over a 381-bit prime field GF(p). Points on the curve satisfy:
+<span class="brand">protokoll</span> uses **BLS12-381**, a pairing-friendly elliptic curve defined over a 381-bit prime field GF(p). Points on the curve satisfy:
 
 ```
 y² = x³ + 4  (mod p)
@@ -274,7 +278,7 @@ expand_message_xmd(roundId, DST, 128)    ← 5× SHA-256 (builtin)
     G1ADD(P1, P2) → H        ← precompile 0x0b
 ```
 
-`expand_message_xmd` is specified in RFC 9380. The oracle uses `@noble/curves` which implements the same algorithm. Both use the domain separation tag `"randnad-v1"`. This guarantees they produce the same `H` from the same `roundId`.
+`expand_message_xmd` is specified in RFC 9380. The oracle uses `@noble/curves` which implements the same algorithm. Both use the domain separation tag `"protokoll-v1"` - the DST registered in the v0.1.x deployed contracts. This guarantees they produce the same `H` from the same `roundId`.
 
 ### 5.3 Full Verification Flow
 
@@ -324,7 +328,7 @@ The oracle is trusted for liveness (it must show up and submit proofs), but not 
 
 Numbers below are from the v0.2.0 (post-hardening) Foundry suite.
 Live testnet measurements will replace these once the hardened build is
-deployed; see [`docs/deployments.md`](./deployments.md).
+deployed; see [Deployments](./guide/deployments).
 
 ```
 requestRandomness{value: fee}("round-5")     ~95,000 gas
@@ -373,7 +377,7 @@ random number. The `requestFee` should be set to cover the fulfiller's
 TypeScript-generated proof is verified by the Solidity contract, plus
 adversarial coverage of the Phase SEC hardenings:
 
-- C1 — `test_squatCannotRedirect`, `test_twoConsumersSameRoundId_…`
-- H1 — `test_griefingConsumer_…`, `test_returnBomb_…`, `test_revertingConsumer_…`
-- H3 — `test_fulfillerReceivesFee`, `test_reentrantFulfillFromFulfiller_reverts`
-- M2 — `test_deployWithGarbagePK_reverts`, `test_deployWithIdentityPK_reverts`
+- C1 - `test_squatCannotRedirect`, `test_twoConsumersSameRoundId_…`
+- H1 - `test_griefingConsumer_…`, `test_returnBomb_…`, `test_revertingConsumer_…`
+- H3 - `test_fulfillerReceivesFee`, `test_reentrantFulfillFromFulfiller_reverts`
+- M2 - `test_deployWithGarbagePK_reverts`, `test_deployWithIdentityPK_reverts`

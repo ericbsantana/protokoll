@@ -15,7 +15,7 @@ import {
 } from '../math/curve.js';
 
 // Must match the DST constant in MonadVRFVerifier.sol
-const DST = 'randnad-v1';
+const DST = 'protokoll-v1';
 
 // ── EIP-2537 encoding ─────────────────────────────────────────────────────────
 // Format: [16 zero bytes][48 byte x-coord][16 zero bytes][48 byte y-coord] = 128 bytes

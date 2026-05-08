@@ -1,15 +1,15 @@
 {
-  "name": "randnad",
+  "name": "protokoll",
   "version": "0.1.0",
-  "description": "Monad-native EC-VRF oracle - built from first principles",
+  "description": "EC-VRF oracle for EVM chains - built from first principles",
   "type": "module",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc --noEmit",
-    "docs:dev": "vitepress dev docs",
+    "docs:dev": "vitepress dev docs --port 9381",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs --port 9381"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

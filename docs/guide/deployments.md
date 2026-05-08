@@ -7,7 +7,7 @@
 > to roundId-squatting (C1) and have no fee or callback gas cap. Do not
 > integrate against the v0.1.x adapter.
 
-### v0.2.0 — post-hardening (Phase SEC) — **ACTIVE**
+### v0.2.0 - post-hardening (Phase SEC) - **ACTIVE**
 
 | Contract            | Address                                                |
 |---------------------|--------------------------------------------------------|
@@ -17,7 +17,7 @@
 **Chain ID:** 10143
 **RPC:** `https://testnet-rpc.monad.xyz`
 **Explorer:** [testnet.monadexplorer.com](https://testnet.monadexplorer.com)
-**Request fee:** `0.001 MON` (1 × 10¹⁵ wei) — paid to the fulfiller, not a treasury
+**Request fee:** `0.001 MON` (1 × 10¹⁵ wei) - paid to the fulfiller, not a treasury
 
 #### v0.2.0 deploy transactions
 
@@ -43,7 +43,7 @@ curve and in the prime-order subgroup.
 
 Constructor changes for the new adapter:
 - Oracle public key is passed as four `bytes32` chunks, not a single `bytes`.
-- New `requestFee` parameter (uint256, in wei) — flat fee paid per request,
+- New `requestFee` parameter (uint256, in wei) - flat fee paid per request,
   forwarded to whoever submits the matching `fulfill`.
 - Constructor reverts (`InvalidPublicKey`) on the all-zero key or any input
   that fails the EIP-2537 G1MSM subgroup check.
@@ -61,7 +61,7 @@ ABI changes:
 
 See the commit log under `fix(sec): S1..S5` for the full rationale and exact changes.
 
-### Deprecated — v0.1.x (pre-hardening)
+### Deprecated - v0.1.x (pre-hardening)
 
 > Vulnerable to roundId squatting; do not use.
 
@@ -74,14 +74,14 @@ See the commit log under `fix(sec): S1..S5` for the full rationale and exact cha
 **RPC:** `https://testnet-rpc.monad.xyz`
 **Explorer:** [testnet.monadexplorer.com](https://testnet.monadexplorer.com)
 
-#### Deploy Transactions (v0.1.x)
+#### Deploy transactions (v0.1.x)
 
 | Contract            | Transaction Hash                                                                                                             |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------|
 | `MonadVRFVerifier`  | [`0xe705c78c...`](https://testnet.monadexplorer.com/tx/0xe705c78c7ac0ebbe694b91777ba0cedcfdf84d55fa014c75f881d7281293bb63) |
 | `MonadVRFAdapter`   | [`0x53b0f716...`](https://testnet.monadexplorer.com/tx/0x53b0f7161d1f287bfc5967804a286ff051e3c959c5a6b12856cb6718f3524ba5) |
 
-#### Oracle Public Key (unchanged across redeploys)
+### Oracle public key (unchanged across redeploys)
 
 The oracle's BLS12-381 public key `Y = k·G`, encoded in EIP-2537 128-byte format:
 
@@ -99,9 +99,9 @@ generation works unchanged after the redeploy.
 
 ## Mainnet
 
-Not yet deployed. Monad mainnet launch is pending. Testnet deployments are the current reference.
+Not yet deployed. Mainnet availability depends on the target chain enabling the EIP-2537 BLS12-381 precompiles (`0x0b`, `0x0c`, `0x10`). The Monad testnet deployment above is the current reference.
 
-## Verifying Addresses
+## Verifying addresses
 
 You can verify the live v0.2.0 adapter's registered key from the command line:
 
@@ -111,5 +111,5 @@ cast call 0x7782a54741dd9Dac95a8a79F181EFB97Bac2Dd19 \
 ```
 
 This returns the 128-byte EIP-2537 encoded public key, reconstructed from
-four `bytes32 immutable` chunks. There is no setter — the value is fixed
+four `bytes32 immutable` chunks. There is no setter - the value is fixed
 at construction.
