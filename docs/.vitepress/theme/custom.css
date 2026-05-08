@@ -63,6 +63,15 @@
 	cursor: pointer;
 }
 
+.VPNav a *,
+.VPNavBarTitle *,
+.VPNavBarMenuLink *,
+.VPNavBarMenuGroup .button *,
+.VPNavBarSocialLink a *,
+.VPNavBarExtra * {
+	cursor: inherit;
+}
+
 .VPNavBarTitle .title {
 	font-family: "Fira Code", monospace;
 	font-weight: 500;
