@@ -1,5 +1,5 @@
 <template>
-  <div class="demo">
+  <div ref="demoRoot" class="demo">
     <header class="demo-intro">
       <h1>How a round runs</h1>
       <p class="lead">
@@ -25,6 +25,7 @@
             <label class="input-row">
               <span class="input-label">roundId</span>
               <input
+                ref="inputEl"
                 v-model="roundIdInput"
                 type="text"
                 class="input"
@@ -188,6 +189,13 @@
               Your contract receives this same <code>β</code> via
               <a href="/guide/integration"><code>fulfillRandomness</code></a>.
             </p>
+
+            <div class="reset-row">
+              <button class="reset-button" type="button" @click="reset">
+                <span class="reset-icon" aria-hidden="true">↻</span>
+                Run again
+              </button>
+            </div>
           </div>
 
           <div v-else class="step-content">
@@ -200,7 +208,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { bls12_381 } from '@noble/curves/bls12-381'
 import {
   betaToBigint,
@@ -228,6 +236,9 @@ const proof = ref(null)
 const hPoint = ref(null)
 const proofError = ref(null)
 const verifyResult = ref(null)
+const demoRoot = ref(null)
+const inputEl = ref(null)
+const pendingTimers = []
 
 const inputError = computed(() => {
   if (currentStep.value > 1) return null
@@ -312,14 +323,35 @@ async function runRequest() {
     if (proof.value) {
       const step2Reveal = 9 * 90 + 800
       const step3Reveal = step2Reveal + 5 * 90 + 700 + 600
-      setTimeout(() => {
-        if (proof.value) currentStep.value = 3
-      }, step2Reveal)
-      setTimeout(() => {
-        if (verifyResult.value) currentStep.value = 4
-      }, step3Reveal)
+      pendingTimers.push(
+        setTimeout(() => {
+          if (proof.value) currentStep.value = 3
+        }, step2Reveal),
+      )
+      pendingTimers.push(
+        setTimeout(() => {
+          if (verifyResult.value) currentStep.value = 4
+        }, step3Reveal),
+      )
     }
   }
+}
+
+function reset() {
+  // Clear any pending step transitions before tearing down state.
+  while (pendingTimers.length) clearTimeout(pendingTimers.pop())
+  proof.value = null
+  hPoint.value = null
+  verifyResult.value = null
+  proofError.value = null
+  step1Output.value = null
+  computing.value = false
+  currentStep.value = 1
+  nextTick(() => {
+    if (typeof window === 'undefined') return
+    demoRoot.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    inputEl.value?.focus()
+  })
 }
 
 function stepStateClass(n) {
@@ -808,6 +840,67 @@ function stepStateClass(n) {
   font-size: 0.88em;
 }
 
+.reset-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.4rem;
+}
+
+.reset-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+  letter-spacing: -0.01em;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.reset-button:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.reset-icon {
+  display: inline-block;
+  font-size: 0.95rem;
+  transition: transform 0.4s ease;
+}
+
+.reset-button:hover .reset-icon {
+  transform: rotate(-180deg);
+}
+
+/* Focus-visible for keyboard nav */
+
+.run-button:focus-visible,
+.reset-button:focus-visible,
+.input-row:focus-within {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+}
+
+.input-row:focus-within {
+  outline: none; /* the existing border-color shift already signals focus */
+}
+
+.integration-callout a:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
 @keyframes fade-in {
   to { opacity: 1; }
 }
@@ -898,6 +991,18 @@ function stepStateClass(n) {
   .demo-key-banner {
     flex-wrap: wrap;
     font-size: 0.7rem;
+  }
+
+  .verify-result {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .beta-row {
+    grid-template-columns: 2.25rem 1fr;
+    gap: 0.55rem;
+    font-size: 0.72rem;
   }
 }
 </style>
