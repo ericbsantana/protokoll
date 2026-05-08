@@ -423,7 +423,7 @@ function stepStateClass(n) {
 
 <style scoped>
 .demo {
-  max-width: 760px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 4rem;
 }
@@ -499,6 +499,12 @@ function stepStateClass(n) {
 
 .step.is-pending .step-marker {
   color: var(--vp-c-text-3);
+}
+
+.step-body {
+  /* Grid items default to min-width: auto, which lets the event panel's */
+  /* long hex push the step out. Pin to 0 so wide content scrolls inside. */
+  min-width: 0;
 }
 
 .step-body h2 {
@@ -625,6 +631,7 @@ function stepStateClass(n) {
   color: var(--vp-c-text-1);
   white-space: pre;
   overflow-x: auto;
+  max-width: 100%;
 }
 
 /* Step 2 proof panel */
