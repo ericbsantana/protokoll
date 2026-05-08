@@ -108,6 +108,6 @@ done
 
 ## Using the hosted oracle
 
-If you don't want to run your own node, the <span class="brand">protokoll</span> hosted oracle watches the v0.2.0 adapter on Monad testnet. See [Deployments](/guide/deployments) for the address and public key.
+If you don't want to run your own node, the <span class="brand">protokoll</span> hosted oracle watches the <ActiveVersion /> adapter on Monad testnet. See [Deployments](/guide/deployments) for the address and public key.
 
 The hosted oracle runs on a best-effort basis for testnet. For mainnet, self-hosting is recommended.
