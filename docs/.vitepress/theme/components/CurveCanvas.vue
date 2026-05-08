@@ -150,23 +150,19 @@ function drawTrail(ctx: CanvasRenderingContext2D) {
 function drawLead(
   ctx: CanvasRenderingContext2D,
   p: { x: number; y: number },
-  glow: number,
+  _glow: number,
 ) {
   const [px, py] = project(p.x, p.y)
-  ctx.shadowColor = '#f97316'
-  ctx.shadowBlur = 12 + glow * 18
   ctx.fillStyle = '#f97316'
   ctx.beginPath()
-  ctx.arc(px, py, 3.5 + glow * 1.5, 0, Math.PI * 2)
+  ctx.arc(px, py, 3.5, 0, Math.PI * 2)
   ctx.fill()
-  ctx.shadowBlur = 0
 }
 
 function drawHash(
   ctx: CanvasRenderingContext2D,
   text: string,
   lockedCount: number,
-  settleProgress: number,
 ) {
   const dark = isDark()
   const baseY = logicalH * 0.91
@@ -182,10 +178,7 @@ function drawHash(
   if (fullyLocked) {
     ctx.textAlign = 'center'
     ctx.fillStyle = lockedColor
-    ctx.shadowColor = '#f97316'
-    ctx.shadowBlur = 8 * settleProgress
     ctx.fillText(text, logicalW / 2, baseY)
-    ctx.shadowBlur = 0
     return
   }
 
@@ -220,7 +213,7 @@ function drawStaticFrame(ctx: CanvasRenderingContext2D) {
   ctx.clearRect(0, 0, logicalW, logicalH)
   drawCurve(ctx, 0)
   drawLead(ctx, pointAt(0), 0)
-  drawHash(ctx, scrambleHash(), HASH_LEN, 1)
+  drawHash(ctx, scrambleHash(), HASH_LEN)
 }
 
 function frame(ts: number) {
@@ -292,7 +285,7 @@ function frame(ts: number) {
     while (trail.length > TRAIL_LEN) trail.shift()
   }
 
-  drawHash(ctx, display, lockedCount, settleProgress)
+  drawHash(ctx, display, lockedCount)
 
   raf = requestAnimationFrame(frame)
 }
