@@ -49,6 +49,13 @@
           <p v-if="inputError" class="input-error">{{ inputError }}</p>
 
           <pre v-if="step1Output" class="event-panel">{{ step1Output }}</pre>
+
+          <div v-if="canContinue && currentStep === 1" class="continue-row">
+            <button class="continue-button" type="button" @click="continueToNext">
+              Continue
+              <span class="continue-arrow" aria-hidden="true">↓</span>
+            </button>
+          </div>
         </div>
       </li>
 
@@ -94,6 +101,13 @@
 
           <div v-else class="step-content">
             <em class="placeholder">— pending —</em>
+          </div>
+
+          <div v-if="canContinue && currentStep === 2" class="continue-row">
+            <button class="continue-button" type="button" @click="continueToNext">
+              Continue
+              <span class="continue-arrow" aria-hidden="true">↓</span>
+            </button>
           </div>
         </div>
       </li>
@@ -144,6 +158,13 @@
 
           <div v-else class="step-content">
             <em class="placeholder">— pending —</em>
+          </div>
+
+          <div v-if="canContinue && currentStep === 3" class="continue-row">
+            <button class="continue-button" type="button" @click="continueToNext">
+              Continue
+              <span class="continue-arrow" aria-hidden="true">↓</span>
+            </button>
           </div>
         </div>
       </li>
@@ -208,7 +229,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { bls12_381 } from '@noble/curves/bls12-381'
 import {
   betaToBigint,
@@ -230,6 +251,9 @@ const REQUESTER = '0x4a2c8a36b6b3df3c6c2e0f6a8b8e0c1f6b8e0d2a'
 
 const roundIdInput = ref('lottery-round-42')
 const currentStep = ref(1)
+// Highest step whose reveal animation has finished. Drives the Continue
+// button: it appears when stepRevealed === currentStep.
+const stepRevealed = ref(0)
 const step1Output = ref(null)
 const computing = ref(false)
 const proof = ref(null)
@@ -239,6 +263,48 @@ const verifyResult = ref(null)
 const demoRoot = ref(null)
 const inputEl = ref(null)
 const pendingTimers = []
+
+// Reveal durations are tuned to match the staggered HexDecode + banner
+// timings inside each step's panel.
+const STEP_REVEAL_MS = {
+  2: 9 * 90 + 800,        // 9 proof rows + final resolve
+  3: 5 * 90 + 700 + 600,  // 5 verify rows + VERIFIED banner
+  4: 1900,                // beta hex + derivation cards + callout
+}
+
+function scheduleReveal(stepN) {
+  const ms = STEP_REVEAL_MS[stepN]
+  if (!ms) return
+  pendingTimers.push(
+    setTimeout(() => {
+      if (stepRevealed.value < stepN) stepRevealed.value = stepN
+    }, ms),
+  )
+}
+
+// Step 2: schedule once both proof data and the active panel are present.
+watch([proof, currentStep], ([p, step]) => {
+  if (p && step === 2 && stepRevealed.value < 2) scheduleReveal(2)
+})
+
+// Step 3: same gate, against verifyResult.
+watch([verifyResult, currentStep], ([v, step]) => {
+  if (v && step === 3 && stepRevealed.value < 3) scheduleReveal(3)
+})
+
+// Step 4: only depends on having entered, since beta is already in proof.
+watch(currentStep, (step) => {
+  if (step === 4 && proof.value && stepRevealed.value < 4) scheduleReveal(4)
+})
+
+const canContinue = computed(
+  () => currentStep.value < 4 && stepRevealed.value === currentStep.value,
+)
+
+function continueToNext() {
+  if (!canContinue.value) return
+  currentStep.value++
+}
 
 const inputError = computed(() => {
   if (currentStep.value > 1) return null
@@ -304,11 +370,13 @@ async function runRequest() {
   if (!canRun.value) return
   const idHex = encodeRoundId(roundIdInput.value)
   step1Output.value = `RandomnessRequested(\n  roundId:    ${idHex},\n  requester:  ${REQUESTER}\n)`
-  currentStep.value = 2
+  // Step 1 has no animation - mark it revealed immediately so Continue shows.
+  stepRevealed.value = 1
   computing.value = true
   proof.value = null
   hPoint.value = null
   proofError.value = null
+  verifyResult.value = null
 
   try {
     const idBytes = roundIdBytes(roundIdInput.value)
@@ -320,25 +388,10 @@ async function runRequest() {
     proofError.value = e instanceof Error ? e.message : String(e)
   } finally {
     computing.value = false
-    if (proof.value) {
-      const step2Reveal = 9 * 90 + 800
-      const step3Reveal = step2Reveal + 5 * 90 + 700 + 600
-      pendingTimers.push(
-        setTimeout(() => {
-          if (proof.value) currentStep.value = 3
-        }, step2Reveal),
-      )
-      pendingTimers.push(
-        setTimeout(() => {
-          if (verifyResult.value) currentStep.value = 4
-        }, step3Reveal),
-      )
-    }
   }
 }
 
 function reset() {
-  // Clear any pending step transitions before tearing down state.
   while (pendingTimers.length) clearTimeout(pendingTimers.pop())
   proof.value = null
   hPoint.value = null
@@ -347,6 +400,7 @@ function reset() {
   step1Output.value = null
   computing.value = false
   currentStep.value = 1
+  stepRevealed.value = 0
   nextTick(() => {
     if (typeof window === 'undefined') return
     demoRoot.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -838,6 +892,55 @@ function stepStateClass(n) {
 
 .integration-callout :deep(code) {
   font-size: 0.88em;
+}
+
+.continue-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.1rem;
+  opacity: 0;
+  animation: fade-in 360ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.continue-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding: 0.55rem 1.2rem;
+  border: 1px solid var(--vp-c-brand-1);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--vp-c-brand-1);
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.2s ease;
+}
+
+.continue-button:hover {
+  background: var(--vp-c-brand-soft);
+  transform: translateY(1px);
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.1);
+}
+
+.continue-arrow {
+  display: inline-block;
+  font-size: 0.95rem;
+  transition: transform 0.18s ease;
+}
+
+.continue-button:hover .continue-arrow {
+  transform: translateY(2px);
+}
+
+.continue-button:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
 }
 
 .reset-row {
