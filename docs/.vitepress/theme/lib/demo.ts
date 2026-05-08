@@ -116,3 +116,9 @@ function bytesToBigint(bytes: Uint8Array): bigint {
   for (const b of bytes) n = (n << 8n) | BigInt(b)
   return n
 }
+
+// Big-endian decode of a beta byte string into a bigint, ready for modular
+// derivation of game outcomes (e.g. dice = uint256(beta) % 6 + 1).
+export function betaToBigint(beta: Uint8Array): bigint {
+  return bytesToBigint(beta)
+}

@@ -147,16 +147,50 @@
         </div>
       </li>
 
-      <!-- Step 4 placeholder -->
+      <!-- Step 4: Deliver -->
       <li class="step" :class="stepStateClass(4)">
         <div class="step-marker">04</div>
         <div class="step-body">
           <h2>Deliver</h2>
           <p>
-            <code>β</code> is returned to your contract via
-            <code>fulfillRandomness(roundId, β)</code>.
+            The adapter calls <code>fulfillRandomness(roundId, β)</code> on
+            your contract. <code>β</code> is the 32-byte random value -
+            same bytes every time for this <code>roundId</code>, derivable
+            into any outcome.
           </p>
-          <div class="step-content">
+
+          <div v-if="currentStep >= 4 && proof" class="deliver-panel">
+            <dl class="beta-row">
+              <dt class="row-label">β</dt>
+              <dd class="row-value beta-value">
+                <HexDecode :text="betaHex" :resolve-ms="900" />
+              </dd>
+            </dl>
+
+            <dl class="derivation-rows">
+              <div class="derivation-row">
+                <dt class="derivation-label">dice roll</dt>
+                <dd class="derivation-formula">
+                  <code>uint256(β) % 6 + 1</code>
+                </dd>
+                <dd class="derivation-value">{{ diceRoll }}</dd>
+              </div>
+              <div class="derivation-row">
+                <dt class="derivation-label">lottery ticket</dt>
+                <dd class="derivation-formula">
+                  <code>uint256(β) % 100</code>
+                </dd>
+                <dd class="derivation-value">#{{ lotteryWinner }}</dd>
+              </div>
+            </dl>
+
+            <p class="integration-callout">
+              Your contract receives this same <code>β</code> via
+              <a href="/guide/integration"><code>fulfillRandomness</code></a>.
+            </p>
+          </div>
+
+          <div v-else class="step-content">
             <em class="placeholder">— pending —</em>
           </div>
         </div>
@@ -169,6 +203,7 @@
 import { computed, ref } from 'vue'
 import { bls12_381 } from '@noble/curves/bls12-381'
 import {
+  betaToBigint,
   bigintToHex,
   bytesToHex,
   DEMO_DST,
@@ -241,6 +276,18 @@ const verifyRows = computed(() => {
     { label: "c'",   value: truncateHex(bigintToHex(v.c_prime, 32)) },
   ]
 })
+
+const betaHex = computed(() =>
+  proof.value ? bytesToHex(proof.value.beta) : '',
+)
+
+const diceRoll = computed(() =>
+  proof.value ? Number(betaToBigint(proof.value.beta) % 6n) + 1 : null,
+)
+
+const lotteryWinner = computed(() =>
+  proof.value ? Number(betaToBigint(proof.value.beta) % 100n) : null,
+)
 
 async function runRequest() {
   if (!canRun.value) return
@@ -655,6 +702,140 @@ function stepStateClass(n) {
     opacity: 1;
     transform: none;
     animation: none;
+  }
+}
+
+/* Step 4 deliver panel */
+
+.deliver-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.beta-row {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  gap: 0.85rem;
+  align-items: baseline;
+  padding: 0.85rem 1rem;
+  background: var(--vp-c-bg-alt);
+  border: 1px solid var(--vp-c-divider);
+  border-left: 2px solid var(--vp-c-brand-1);
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+}
+
+.beta-value {
+  color: var(--vp-c-text-1);
+  margin: 0;
+  word-break: break-all;
+}
+
+.derivation-rows {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+  opacity: 0;
+  animation: fade-in 600ms cubic-bezier(0.2, 0.7, 0.2, 1) 950ms forwards;
+}
+
+.derivation-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr auto;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding: 0.65rem 0.95rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 4px;
+  background: var(--vp-c-bg-soft);
+  font-family: 'Fira Code', monospace;
+}
+
+.derivation-label {
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--vp-c-text-2);
+  margin: 0;
+}
+
+.derivation-formula {
+  font-size: 0.78rem;
+  margin: 0;
+  color: var(--vp-c-text-3);
+}
+
+.derivation-formula :deep(code) {
+  background: transparent;
+  padding: 0;
+  color: var(--vp-c-text-2);
+  font-size: 0.92em;
+}
+
+.derivation-value {
+  font-weight: 500;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--vp-c-brand-1);
+  margin: 0;
+}
+
+.integration-callout {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--vp-c-text-2);
+  margin: 0.35rem 0 0;
+  opacity: 0;
+  animation: fade-in 600ms cubic-bezier(0.2, 0.7, 0.2, 1) 1300ms forwards;
+}
+
+.integration-callout a {
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--vp-c-brand-1);
+}
+
+.integration-callout a:hover {
+  border-bottom-style: solid;
+}
+
+.integration-callout :deep(code) {
+  font-size: 0.88em;
+}
+
+@keyframes fade-in {
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .derivation-rows,
+  .integration-callout {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .derivation-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'label value'
+      'formula formula';
+    gap: 0.35rem 0.85rem;
+  }
+  .derivation-label {
+    grid-area: label;
+  }
+  .derivation-value {
+    grid-area: value;
+  }
+  .derivation-formula {
+    grid-area: formula;
   }
 }
 

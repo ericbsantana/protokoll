@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { bls12_381 } from '@noble/curves/bls12-381'
 import {
+  betaToBigint,
   bigintToHex,
   bytesToHex,
   DEMO_DST,
@@ -153,4 +154,35 @@ describe('recomputeAndVerify', () => {
     expect(result.matches).toBe(false)
   })
 })
+
+describe('betaToBigint', () => {
+  test('decodes big-endian bytes', () => {
+    expect(betaToBigint(new Uint8Array([0x00, 0x00, 0x00, 0x01]))).toBe(1n)
+    expect(betaToBigint(new Uint8Array([0x01, 0x00]))).toBe(0x100n)
+    expect(betaToBigint(new Uint8Array([0xff, 0xff]))).toBe(0xffffn)
+  })
+
+  test('empty bytes give 0n', () => {
+    expect(betaToBigint(new Uint8Array(0))).toBe(0n)
+  })
+
+  test('full 32-byte beta decodes to a 256-bit bigint', () => {
+    const beta = new Uint8Array(32)
+    beta[0] = 0xab // most significant byte
+    beta[31] = 0xcd
+    const expected = (0xabn << 248n) | 0xcdn
+    expect(betaToBigint(beta)).toBe(expected)
+  })
+
+  test('mod 6 + 1 yields 1..6 inclusive', () => {
+    // Sample a handful of byte patterns; result must always land in [1, 6].
+    for (const seed of [0x00, 0x01, 0x42, 0xff, 0xa5]) {
+      const beta = new Uint8Array(32).fill(seed)
+      const dice = Number(betaToBigint(beta) % 6n) + 1
+      expect(dice).toBeGreaterThanOrEqual(1)
+      expect(dice).toBeLessThanOrEqual(6)
+    }
+  })
+})
+
 
