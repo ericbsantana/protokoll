@@ -10,16 +10,16 @@
 
 ### v0.3.0 - DST rename (`protokoll-v1`) - **ACTIVE**
 
-| Contract            | Address                                                |
-|---------------------|--------------------------------------------------------|
-| `MonadVRFVerifier`  | `0x540A336317274Aac36b8cf9B7510f428Bf3e49Cc`           |
-| `MonadVRFAdapter`   | `0x9c46878D6736eDC7eAF135DB6B3B2A9Dab2A756F`           |
+| Contract            | Address                                                              |
+|---------------------|----------------------------------------------------------------------|
+| `MonadVRFVerifier`  | <DeployedAddr version="v0.3.0" contract="verifier" />                 |
+| `MonadVRFAdapter`   | <DeployedAddr version="v0.3.0" contract="adapter" />                  |
 
-**Chain ID:** 10143
-**RPC:** `https://testnet-rpc.monad.xyz`
-**Explorer:** [testnet.monadexplorer.com](https://testnet.monadexplorer.com)
-**Request fee:** `0.001 MON` (1 × 10¹⁵ wei) - paid to the fulfiller, not a treasury
-**DST:** `protokoll-v1` (must match `src/oracle/proof.ts`)
+- **Chain ID:** 10143
+- **RPC:** `https://testnet-rpc.monad.xyz`
+- **Explorer:** [testnet.monadexplorer.com](https://testnet.monadexplorer.com)
+- **Request fee:** `0.001 MON` (1 × 10¹⁵ wei) - paid to the fulfiller, not a treasury
+- **DST:** `protokoll-v1` (must match `src/oracle/proof.ts`)
 
 #### v0.3.0 deploy transactions
 
@@ -59,10 +59,10 @@ two sides match again.
 
 > DST mismatch with the current off-chain oracle. Proofs will not verify.
 
-| Contract            | Address                                                |
-|---------------------|--------------------------------------------------------|
-| `MonadVRFVerifier`  | `0xFb70863723D8a54a559A657416Cdb2068B1b9F9D`           |
-| `MonadVRFAdapter`   | `0x7782a54741dd9Dac95a8a79F181EFB97Bac2Dd19`           |
+| Contract            | Address                                                              |
+|---------------------|----------------------------------------------------------------------|
+| `MonadVRFVerifier`  | <DeployedAddr version="v0.2.0" contract="verifier" />                 |
+| `MonadVRFAdapter`   | <DeployedAddr version="v0.2.0" contract="adapter" />                  |
 
 #### v0.2.0 deploy transactions
 
@@ -95,10 +95,10 @@ See the commit log under `fix(sec): S1..S5` for the full rationale and exact cha
 
 > Vulnerable to roundId squatting; do not use.
 
-| Contract            | Address                                                                                                |
-|---------------------|--------------------------------------------------------------------------------------------------------|
-| `MonadVRFVerifier`  | `0xe7f01914d7547d08d155ba47ee9616ee7d504b21`                                                           |
-| `MonadVRFAdapter`   | `0xf04f829a98a686893ba740260e37876725c89ed5`                                                           |
+| Contract            | Address                                                              |
+|---------------------|----------------------------------------------------------------------|
+| `MonadVRFVerifier`  | <DeployedAddr version="v0.1.x" contract="verifier" />                 |
+| `MonadVRFAdapter`   | <DeployedAddr version="v0.1.x" contract="adapter" />                  |
 
 #### Deploy transactions (v0.1.x)
 

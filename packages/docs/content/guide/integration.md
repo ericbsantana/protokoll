@@ -63,7 +63,7 @@ You do not need to do anything to trigger this - it happens automatically once t
 
 | Network | Adapter Address |
 |---|---|
-| Monad Testnet | `0x7782a54741dd9Dac95a8a79F181EFB97Bac2Dd19` |
+| Monad Testnet | <DeployedAddr contract="adapter" /> |
 
 See [Deployments](/guide/deployments) for full details including the verifier address and oracle public key.
 

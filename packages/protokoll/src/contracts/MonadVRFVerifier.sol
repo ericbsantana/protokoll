@@ -108,7 +108,7 @@ contract MonadVRFVerifier {
 
     // RFC 9380 §5.3.1 - expand_message_xmd with SHA-256, output 128 bytes
     // ell = ceil(128/32) = 4 → produces b1||b2||b3||b4
-    function _expandMessageXmd(bytes memory roundIdBytes) internal view returns (bytes memory) {
+    function _expandMessageXmd(bytes memory roundIdBytes) internal pure returns (bytes memory) {
         bytes memory DST_prime = abi.encodePacked(DST, uint8(DST.length));
 
         // msg_prime = Z_pad(64) || roundIdBytes || I2OSP(128,2) || I2OSP(0,1) || DST_prime
