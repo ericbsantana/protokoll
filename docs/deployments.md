@@ -2,18 +2,44 @@
 
 ## Monad Testnet
 
-> ⚠️ **Hardened-contract redeploy is pending.** The currently-deployed
-> contracts below are the pre-hardening (v0.1.x) build. They are vulnerable
-> to roundId-squatting (CVE-style C1) and have no fee or callback gas cap.
-> **Do not integrate against these addresses.** New addresses will be
-> populated here once the v0.2.0-security-hardening build is deployed.
+> Two builds have been deployed. **Use the v0.2.0 (post-hardening) addresses.**
+> The v0.1.x addresses are kept here for reference only; they are vulnerable
+> to roundId-squatting (C1) and have no fee or callback gas cap. Do not
+> integrate against the v0.1.x adapter.
 
-### Pending — v0.2.0 (post-hardening, Phase SEC)
+### v0.2.0 — post-hardening (Phase SEC) — **ACTIVE**
 
 | Contract            | Address                                                |
 |---------------------|--------------------------------------------------------|
-| `MonadVRFVerifier`  | _pending redeploy_                                     |
-| `MonadVRFAdapter`   | _pending redeploy_                                     |
+| `MonadVRFVerifier`  | `0xFb70863723D8a54a559A657416Cdb2068B1b9F9D`           |
+| `MonadVRFAdapter`   | `0x7782a54741dd9Dac95a8a79F181EFB97Bac2Dd19`           |
+
+**Chain ID:** 10143
+**RPC:** `https://testnet-rpc.monad.xyz`
+**Explorer:** [testnet.monadexplorer.com](https://testnet.monadexplorer.com)
+**Request fee:** `0.001 MON` (1 × 10¹⁵ wei) — paid to the fulfiller, not a treasury
+
+#### v0.2.0 deploy transactions
+
+| Contract            | Transaction Hash                                                                                                                            |
+|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `MonadVRFVerifier`  | [`0x5095aa50...`](https://testnet.monadexplorer.com/tx/0x5095aa5079ae5b34a40a89d16e92c60d5d6a65111bab492d0875d47093fe5bf6) (block 30357672) |
+| `MonadVRFAdapter`   | [`0x429a9d4a...`](https://testnet.monadexplorer.com/tx/0x429a9d4ad6884a50504a06cb982c23261d4306a03bb3327426855f19af70be4e) (block 30357678) |
+
+Total deploy gas: 1 454 666 (≈0.1498 MON @ 103 gwei).
+
+On-chain state verified post-deploy via `cast call`:
+
+```
+requestFee()         → 1000000000000000   (0.001 MON ✓)
+verifier()           → 0xFb70...9F9D       (matches deployed verifier ✓)
+CALLBACK_GAS_LIMIT() → 200000              (200k cap ✓)
+oraclePublicKey()    → 128 bytes, identical to v0.1.x ✓
+```
+
+The constructor's G1MSM smoke check passed (otherwise the deploy would
+have reverted with `InvalidPublicKey`), confirming the public key is on
+curve and in the prime-order subgroup.
 
 Constructor changes for the new adapter:
 - Oracle public key is passed as four `bytes32` chunks, not a single `bytes`.
@@ -33,9 +59,7 @@ ABI changes:
 - New view: `oraclePublicKey()` returns the 128-byte EIP-2537 key
   (reconstructed from four immutable chunks).
 
-See [`tasks/plan.md`](../tasks/plan.md) § "Security Hardening Plan (Phase SEC)"
-for the full slice-by-slice rationale, and the commit log under
-`fix(sec): S1..S5` for the exact changes.
+See the commit log under `fix(sec): S1..S5` for the full rationale and exact changes.
 
 ### Deprecated — v0.1.x (pre-hardening)
 
@@ -79,10 +103,11 @@ Not yet deployed. Monad mainnet launch is pending. Testnet deployments are the c
 
 ## Verifying Addresses
 
-After the v0.2.0 redeploy, you can verify the adapter's registered key:
+You can verify the live v0.2.0 adapter's registered key from the command line:
 
-```solidity
-MonadVRFAdapter(<new-adapter-address>).oraclePublicKey()
+```bash
+cast call 0x7782a54741dd9Dac95a8a79F181EFB97Bac2Dd19 \
+  'oraclePublicKey()(bytes)' --rpc-url https://testnet-rpc.monad.xyz
 ```
 
 This returns the 128-byte EIP-2537 encoded public key, reconstructed from
