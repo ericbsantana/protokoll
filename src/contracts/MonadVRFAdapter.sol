@@ -22,8 +22,19 @@ import {MonadVRFVerifier} from "./MonadVRFVerifier.sol";
 contract MonadVRFAdapter {
     MonadVRFVerifier public immutable verifier;
 
-    // EIP-2537 128-byte public key of the oracle. Set once at deploy.
-    bytes public oraclePublicKey;
+    // EIP-2537 128-byte public key of the oracle, stored as four bytes32
+    // immutables. Storing as immutable (instead of a storage `bytes`) means
+    // the value is fixed at construction and cannot be repurposed by a future
+    // maintainer adding a setter. Reconstruct via oraclePublicKey().
+    bytes32 private immutable pk0;
+    bytes32 private immutable pk1;
+    bytes32 private immutable pk2;
+    bytes32 private immutable pk3;
+
+    // BLS12_G1MSM precompile (EIP-2537 §0x0c). Subgroup-checks its inputs;
+    // we use it at construction to validate the public key is a real G1 point
+    // in the prime-order subgroup, not just well-formed bytes.
+    address private constant G1MSM = address(0x0c);
 
     // Flat fee charged per request, paid in MON. Fully forwarded to whoever
     // submits the matching fulfill(). Set at construction; immutable.
@@ -56,11 +67,42 @@ contract MonadVRFAdapter {
     error InvalidProof();
     error IncorrectFee(uint256 sent, uint256 expected);
     error FeeTransferFailed();
+    error InvalidPublicKey();
 
-    constructor(address verifier_, bytes memory oraclePublicKey_, uint256 requestFee_) {
+    constructor(
+        address verifier_,
+        bytes32 pk0_,
+        bytes32 pk1_,
+        bytes32 pk2_,
+        bytes32 pk3_,
+        uint256 requestFee_
+    ) {
         verifier = MonadVRFVerifier(verifier_);
-        oraclePublicKey = oraclePublicKey_;
+        pk0 = pk0_;
+        pk1 = pk1_;
+        pk2 = pk2_;
+        pk3 = pk3_;
         requestFee = requestFee_;
+
+        // Reject the identity (all-zero coordinates) — not a useful signing key.
+        if (pk0_ == bytes32(0) && pk1_ == bytes32(0) && pk2_ == bytes32(0) && pk3_ == bytes32(0)) {
+            revert InvalidPublicKey();
+        }
+
+        // Smoke-call G1MSM with scalar 1 to force EIP-2537 subgroup-membership
+        // and on-curve checks at deploy time. Per EIP-2537 the precompile MUST
+        // return an error on any input that fails the subgroup check, which we
+        // surface here as InvalidPublicKey.
+        (bool ok, bytes memory out) = G1MSM.staticcall(
+            abi.encodePacked(pk0_, pk1_, pk2_, pk3_, bytes32(uint256(1)))
+        );
+        if (!ok || out.length != 128) revert InvalidPublicKey();
+    }
+
+    /// @notice Reconstruct the EIP-2537 128-byte oracle public key from the
+    ///         four immutable chunks. Cheap (no SLOADs).
+    function oraclePublicKey() public view returns (bytes memory) {
+        return abi.encodePacked(pk0, pk1, pk2, pk3);
     }
 
     /// @notice Compute the storage key for a (consumer, roundId) pair.
@@ -97,7 +139,7 @@ contract MonadVRFAdapter {
         if (fulfilled[key]) revert AlreadyFulfilled(consumer, roundId);
         if (!pendingRequests[key]) revert NoPendingRequest(consumer, roundId);
 
-        if (!verifier.verifyProof(oraclePublicKey, roundId, gamma, c, s)) revert InvalidProof();
+        if (!verifier.verifyProof(oraclePublicKey(), roundId, gamma, c, s)) revert InvalidProof();
 
         bytes32 beta = sha256(abi.encodePacked(gamma));
 

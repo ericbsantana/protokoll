@@ -21,7 +21,14 @@ contract MonadVRFAdapterTest is Test {
 
     bytes32 constant ROUND_ID    = bytes32("round-1");
     uint256 constant REQUEST_FEE = 0.001 ether;
-    bytes constant PK            = hex"000000000000000000000000000000000ce3b57b791798433fd323753489cac9bca43b98deaafaed91f4cb010730ae1e38b186ccd37a09b8aed62ce23b699c4800000000000000000000000000000000008c346228e4482ec20a2bf7d5a2fe74ebf3c79b912d1b0ba977a873b66f7a9b8b42585a78c0c21d66da6a15767efdb1";
+
+    // EIP-2537 128-byte oracle public key, split into 4×32-byte immutable chunks.
+    bytes32 constant PK0 = 0x000000000000000000000000000000000ce3b57b791798433fd323753489cac9;
+    bytes32 constant PK1 = 0xbca43b98deaafaed91f4cb010730ae1e38b186ccd37a09b8aed62ce23b699c48;
+    bytes32 constant PK2 = 0x00000000000000000000000000000000008c346228e4482ec20a2bf7d5a2fe74;
+    bytes32 constant PK3 = 0xebf3c79b912d1b0ba977a873b66f7a9b8b42585a78c0c21d66da6a15767efdb1;
+    bytes constant PK_BYTES = hex"000000000000000000000000000000000ce3b57b791798433fd323753489cac9bca43b98deaafaed91f4cb010730ae1e38b186ccd37a09b8aed62ce23b699c4800000000000000000000000000000000008c346228e4482ec20a2bf7d5a2fe74ebf3c79b912d1b0ba977a873b66f7a9b8b42585a78c0c21d66da6a15767efdb1";
+
     bytes constant GAMMA         = hex"000000000000000000000000000000000bb381154dc86a2b91eb3710aa412ea071e91d5122c976b0e8775474f5c5911667253293f9cdcdd05887adc908a5f4d500000000000000000000000000000000016c6b67b701a7ae42421582570c9fedef994318c7656659169985792799f39a3c2ed6b8285d6312e5179084713314da";
     uint256 constant C           = 0x5973b13f00290106fe0be3dff5d921507ddb1ee0223870bb74f58fb9863f8662;
     uint256 constant S           = 0x0b61101267947db0fe93d38a4cddcecb3c7988a9d4940f280ab23c1f9785ef59;
@@ -29,7 +36,7 @@ contract MonadVRFAdapterTest is Test {
 
     function setUp() public {
         verifier = new MonadVRFVerifier();
-        adapter  = new MonadVRFAdapter(address(verifier), PK, REQUEST_FEE);
+        adapter  = new MonadVRFAdapter(address(verifier), PK0, PK1, PK2, PK3, REQUEST_FEE);
         consumer = new MockConsumer(address(adapter));
         vm.deal(address(consumer), 10 ether);
     }
@@ -236,7 +243,7 @@ contract MonadVRFAdapterTest is Test {
     }
 
     function test_zeroFeeDeployment_acceptsZeroValue() public {
-        MonadVRFAdapter freeAdapter = new MonadVRFAdapter(address(verifier), PK, 0);
+        MonadVRFAdapter freeAdapter = new MonadVRFAdapter(address(verifier), PK0, PK1, PK2, PK3, 0);
         MockConsumer freeConsumer  = new MockConsumer(address(freeAdapter));
 
         // No vm.deal, no value forwarded.
@@ -253,12 +260,35 @@ contract MonadVRFAdapterTest is Test {
     }
 
     function test_zeroFeeDeployment_rejectsValue() public {
-        MonadVRFAdapter freeAdapter = new MonadVRFAdapter(address(verifier), PK, 0);
+        MonadVRFAdapter freeAdapter = new MonadVRFAdapter(address(verifier), PK0, PK1, PK2, PK3, 0);
         MockConsumer freeConsumer  = new MockConsumer(address(freeAdapter));
         vm.deal(address(freeConsumer), 1 ether);
 
         vm.expectRevert(abi.encodeWithSelector(MonadVRFAdapter.IncorrectFee.selector, 1, 0));
         freeConsumer.requestRandomness{value: 1}(ROUND_ID);
+    }
+
+    // ── M2 + L1: deploy-time public-key validation; immutable storage ───────
+
+    function test_deployWithIdentityPK_reverts() public {
+        // All-zero coordinates = G1 identity. Useless as a verification key.
+        vm.expectRevert(MonadVRFAdapter.InvalidPublicKey.selector);
+        new MonadVRFAdapter(address(verifier), bytes32(0), bytes32(0), bytes32(0), bytes32(0), REQUEST_FEE);
+    }
+
+    function test_deployWithGarbagePK_reverts() public {
+        // 128 bytes of 0xff is not a valid encoded G1 point — top 16 bytes of
+        // each coordinate slot must be zero (EIP-2537 padding), and the values
+        // must reduce to a curve point in the prime-order subgroup.
+        bytes32 junk = bytes32(type(uint256).max);
+        vm.expectRevert(MonadVRFAdapter.InvalidPublicKey.selector);
+        new MonadVRFAdapter(address(verifier), junk, junk, junk, junk, REQUEST_FEE);
+    }
+
+    function test_oraclePublicKeyView_returnsOriginalBytes() public view {
+        bytes memory got = adapter.oraclePublicKey();
+        assertEq(got.length, 128);
+        assertEq(keccak256(got), keccak256(PK_BYTES));
     }
 
     function test_reentrantFulfillFromFulfiller_reverts() public {
