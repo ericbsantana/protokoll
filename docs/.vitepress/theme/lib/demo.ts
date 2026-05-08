@@ -1,3 +1,13 @@
+import {
+  add,
+  CURVE_ORDER,
+  G1_GENERATOR,
+  scalarMul,
+  type AffinePoint,
+} from '../../../../src/math/curve'
+import { encodePoint } from '../../../../src/oracle/proof'
+import type { OracleProof } from '../../../../src/oracle/proof'
+
 // Demo private key. Hardcoded so Y = k·G is stable across page reloads.
 // Leading byte 0x42 keeps the value below the BLS12-381 G1 group order
 // r ≈ 0x73eda753... NOT the production oracle key.
@@ -45,4 +55,64 @@ export function truncateHex(hex: string, head = 8, tail = 6): string {
 
 export function encodeRoundId(text: string): string {
   return bytesToHex(roundIdBytes(text))
+}
+
+export type VerifyResult = {
+  U_prime: AffinePoint
+  V_prime: AffinePoint
+  c_prime: bigint
+  matches: boolean
+}
+
+// Recomputes U', V', and c' from a DLEQ proof and returns whether c' == c.
+// This mirrors what MonadVRFVerifier.sol does on-chain via BLS12-381
+// precompiles, so the demo can show every intermediate value.
+export async function recomputeAndVerify(
+  proof: OracleProof,
+  H: AffinePoint,
+): Promise<VerifyResult> {
+  // U' = s·G + c·Y
+  const sG = scalarMul(proof.s, G1_GENERATOR) as AffinePoint
+  const cY = scalarMul(proof.c, proof.publicKey) as AffinePoint
+  const U_prime = add(sG, cY) as AffinePoint
+  // V' = s·H + c·γ
+  const sH = scalarMul(proof.s, H) as AffinePoint
+  const cGamma = scalarMul(proof.c, proof.gamma) as AffinePoint
+  const V_prime = add(sH, cGamma) as AffinePoint
+  // c' = sha256(G || Y || H || γ || U' || V') mod n
+  const buf = concatBytes(
+    encodePoint(G1_GENERATOR),
+    encodePoint(proof.publicKey),
+    encodePoint(H),
+    encodePoint(proof.gamma),
+    encodePoint(U_prime),
+    encodePoint(V_prime),
+  )
+  const ab = new ArrayBuffer(buf.byteLength)
+  new Uint8Array(ab).set(buf)
+  const hashBuf = await crypto.subtle.digest('SHA-256', ab)
+  const c_prime = bytesToBigint(new Uint8Array(hashBuf)) % CURVE_ORDER
+  return {
+    U_prime,
+    V_prime,
+    c_prime,
+    matches: c_prime === proof.c,
+  }
+}
+
+function concatBytes(...arrs: Uint8Array[]): Uint8Array {
+  const total = arrs.reduce((n, a) => n + a.length, 0)
+  const buf = new Uint8Array(total)
+  let off = 0
+  for (const a of arrs) {
+    buf.set(a, off)
+    off += a.length
+  }
+  return buf
+}
+
+function bytesToBigint(bytes: Uint8Array): bigint {
+  let n = 0n
+  for (const b of bytes) n = (n << 8n) | BigInt(b)
+  return n
 }

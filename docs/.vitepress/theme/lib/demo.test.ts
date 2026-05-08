@@ -1,11 +1,16 @@
 import { describe, expect, test } from 'vitest'
+import { bls12_381 } from '@noble/curves/bls12-381'
 import {
   bigintToHex,
   bytesToHex,
+  DEMO_DST,
   encodeRoundId,
+  K_DEMO,
+  recomputeAndVerify,
   roundIdBytes,
   truncateHex,
 } from './demo'
+import { generateOracleProof } from '../../../../src/oracle/proof'
 
 describe('encodeRoundId', () => {
   test('encodes ASCII string and right-pads to 32 bytes', () => {
@@ -108,3 +113,44 @@ describe('truncateHex', () => {
     expect(truncateHex('a'.repeat(14), 3, 3)).toBe('aaa…aaa')
   })
 })
+
+async function makeProofFor(roundId: string) {
+  const idBytes = roundIdBytes(roundId)
+  const Hp = bls12_381.G1.hashToCurve(idBytes, { DST: DEMO_DST }).toAffine()
+  const H = { x: Hp.x, y: Hp.y }
+  const proof = await generateOracleProof(K_DEMO, idBytes)
+  return { proof, H }
+}
+
+describe('recomputeAndVerify', () => {
+  test('a valid proof verifies and the recomputed challenge equals c', async () => {
+    const { proof, H } = await makeProofFor('verify-positive-test')
+    const result = await recomputeAndVerify(proof, H)
+    expect(result.matches).toBe(true)
+    expect(result.c_prime).toBe(proof.c)
+  })
+
+  test('tampering with c breaks the verification', async () => {
+    const { proof, H } = await makeProofFor('verify-tamper-c')
+    const tampered = { ...proof, c: (proof.c + 1n) }
+    const result = await recomputeAndVerify(tampered, H)
+    expect(result.matches).toBe(false)
+    expect(result.c_prime).not.toBe(tampered.c)
+  })
+
+  test('tampering with gamma breaks the verification', async () => {
+    const { proof, H } = await makeProofFor('verify-tamper-gamma')
+    // Substitute H for gamma - any other valid point would also do.
+    const tampered = { ...proof, gamma: H }
+    const result = await recomputeAndVerify(tampered, H)
+    expect(result.matches).toBe(false)
+  })
+
+  test('tampering with s breaks the verification', async () => {
+    const { proof, H } = await makeProofFor('verify-tamper-s')
+    const tampered = { ...proof, s: (proof.s + 1n) }
+    const result = await recomputeAndVerify(tampered, H)
+    expect(result.matches).toBe(false)
+  })
+})
+

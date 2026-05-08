@@ -97,17 +97,65 @@
         </div>
       </li>
 
-      <!-- Steps 3-4 placeholders -->
-      <li
-        v-for="step in pendingSteps"
-        :key="step.n"
-        class="step"
-        :class="stepStateClass(step.n)"
-      >
-        <div class="step-marker">{{ step.n.toString().padStart(2, '0') }}</div>
+      <!-- Step 3: Verify -->
+      <li class="step" :class="stepStateClass(3)">
+        <div class="step-marker">03</div>
         <div class="step-body">
-          <h2>{{ step.title }}</h2>
-          <p v-html="step.lead" />
+          <h2>Verify</h2>
+          <p>
+            On-chain, the BLS12-381 precompiles re-derive
+            <code>U'</code>, <code>V'</code>, and the challenge
+            <code>c'</code>. If <code>c' == c</code>, the proof is valid -
+            the oracle could not have produced these values without knowing
+            <code>k</code>.
+          </p>
+
+          <div v-if="currentStep >= 3 && verifyResult" class="verify-panel">
+            <dl class="proof-rows">
+              <div
+                v-for="(item, i) in verifyRows"
+                :key="item.label"
+                class="proof-row"
+              >
+                <dt class="row-label">{{ item.label }}</dt>
+                <dd class="row-value">
+                  <HexDecode :text="item.value" :start-delay="i * 90" />
+                </dd>
+              </div>
+            </dl>
+
+            <div
+              class="verify-result"
+              :class="verifyResult.matches ? 'is-verified' : 'is-failed'"
+              :style="{ animationDelay: `${verifyRows.length * 90 + 700}ms` }"
+            >
+              <span class="verify-badge">
+                <span v-if="verifyResult.matches">✓ VERIFIED</span>
+                <span v-else>✗ FAILED</span>
+              </span>
+              <span class="verify-explainer">
+                <code>c'</code>
+                {{ verifyResult.matches ? 'matches' : 'differs from' }}
+                <code>c</code>
+              </span>
+            </div>
+          </div>
+
+          <div v-else class="step-content">
+            <em class="placeholder">— pending —</em>
+          </div>
+        </div>
+      </li>
+
+      <!-- Step 4 placeholder -->
+      <li class="step" :class="stepStateClass(4)">
+        <div class="step-marker">04</div>
+        <div class="step-body">
+          <h2>Deliver</h2>
+          <p>
+            <code>β</code> is returned to your contract via
+            <code>fulfillRandomness(roundId, β)</code>.
+          </p>
           <div class="step-content">
             <em class="placeholder">— pending —</em>
           </div>
@@ -126,25 +174,13 @@ import {
   DEMO_DST,
   encodeRoundId,
   K_DEMO,
+  recomputeAndVerify,
   roundIdBytes,
   truncateHex,
 } from '../lib/demo'
 // Cross-tree import. Allowed by vite.server.fs.allow in config.ts.
 import { generateOracleProof } from '../../../../src/oracle/proof'
 import HexDecode from './HexDecode.vue'
-
-const pendingSteps = [
-  {
-    n: 3,
-    title: 'Verify',
-    lead: 'On-chain, the BLS12-381 precompiles re-derive the challenge and check it matches.',
-  },
-  {
-    n: 4,
-    title: 'Deliver',
-    lead: '<code>β</code> is returned to your contract via <code>fulfillRandomness(roundId, β)</code>.',
-  },
-]
 
 // Demo "requester" address - in a real round this is the consumer contract.
 const REQUESTER = '0x4a2c8a36b6b3df3c6c2e0f6a8b8e0c1f6b8e0d2a'
@@ -156,6 +192,7 @@ const computing = ref(false)
 const proof = ref(null)
 const hPoint = ref(null)
 const proofError = ref(null)
+const verifyResult = ref(null)
 
 const inputError = computed(() => {
   if (currentStep.value > 1) return null
@@ -193,6 +230,18 @@ const proofRows = computed(() => {
   ]
 })
 
+const verifyRows = computed(() => {
+  if (!verifyResult.value) return []
+  const v = verifyResult.value
+  return [
+    { label: "U'.x", value: truncateHex(bigintToHex(v.U_prime.x, 48)) },
+    { label: "U'.y", value: truncateHex(bigintToHex(v.U_prime.y, 48)) },
+    { label: "V'.x", value: truncateHex(bigintToHex(v.V_prime.x, 48)) },
+    { label: "V'.y", value: truncateHex(bigintToHex(v.V_prime.y, 48)) },
+    { label: "c'",   value: truncateHex(bigintToHex(v.c_prime, 32)) },
+  ]
+})
+
 async function runRequest() {
   if (!canRun.value) return
   const idHex = encodeRoundId(roundIdInput.value)
@@ -208,16 +257,20 @@ async function runRequest() {
     const H = bls12_381.G1.hashToCurve(idBytes, { DST: DEMO_DST }).toAffine()
     hPoint.value = { x: H.x, y: H.y }
     proof.value = await generateOracleProof(K_DEMO, idBytes)
+    verifyResult.value = await recomputeAndVerify(proof.value, hPoint.value)
   } catch (e) {
     proofError.value = e instanceof Error ? e.message : String(e)
   } finally {
     computing.value = false
     if (proof.value) {
-      // After staggered reveal completes, advance to Step 3.
-      const totalReveal = 9 * 90 + 800
+      const step2Reveal = 9 * 90 + 800
+      const step3Reveal = step2Reveal + 5 * 90 + 700 + 600
       setTimeout(() => {
         if (proof.value) currentStep.value = 3
-      }, totalReveal)
+      }, step2Reveal)
+      setTimeout(() => {
+        if (verifyResult.value) currentStep.value = 4
+      }, step3Reveal)
     }
   }
 }
@@ -533,6 +586,76 @@ function stepStateClass(n) {
   color: var(--vp-c-text-1);
   margin: 0;
   word-break: break-all;
+}
+
+/* Step 3 verify result */
+
+.verify-panel {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.verify-result {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1.1rem;
+  border-radius: 6px;
+  font-family: 'Fira Code', monospace;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: verify-in 600ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.verify-result :deep(code) {
+  background: transparent;
+  padding: 0;
+  font-size: 0.92em;
+}
+
+.verify-result.is-verified {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.16) 0%, rgba(249, 115, 22, 0.10) 100%);
+  border: 1px solid var(--vp-c-brand-1);
+  color: var(--vp-c-brand-3);
+  box-shadow:
+    inset 0 1px 0 0 rgba(249, 115, 22, 0.18),
+    0 8px 24px rgba(249, 115, 22, 0.08);
+}
+
+.verify-result.is-failed {
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #f87171;
+}
+
+.verify-badge {
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.verify-explainer {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--vp-c-text-2);
+}
+
+@keyframes verify-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verify-result {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
 }
 
 .step-content {
