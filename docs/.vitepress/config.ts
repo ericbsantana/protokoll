@@ -25,6 +25,15 @@ export default defineConfig({
     math: true,
   },
 
+  vite: {
+    server: {
+      fs: {
+        // Let the /demo page import generateOracleProof from src/oracle/proof.ts.
+        allow: ['..'],
+      },
+    },
+  },
+
   themeConfig: {
     nav: [
       { text: 'Whitepaper', link: '/whitepaper' },
