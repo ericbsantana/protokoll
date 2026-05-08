@@ -21,6 +21,10 @@ export default defineConfig({
 
   srcExclude: ['theory/**', 'ideas/**', 'project.md'],
 
+  sitemap: {
+    hostname: 'https://protokoll.dev',
+  },
+
   markdown: {
     math: true,
   },

@@ -54,27 +54,18 @@
 	-webkit-backdrop-filter: blur(14px);
 }
 
-/* Pin pointer across the whole interactive band of the navbar so the    */
-/* cursor doesn't flicker between pointer (over a link) and default      */
-/* (over the flex gap or the inner <span>). !important wins against      */
-/* VitePress's Vue-scoped class+attribute selectors (e.g. on the         */
-/* flyout's <button>). Search input keeps its text cursor below.         */
-.VPNavBarTitle,
-.VPNavBarTitle *,
+/* VitePress wraps nav links and dropdown items in plain <div>s, so the */
+/* cursor flips to default over flex gaps, the flyout wrapper, and the  */
+/* menu panel's padding. Apply pointer to those containers only - the   */
+/* <a>/<button> children already get pointer from UA styles, and        */
+/* VitePress doesn't set cursor in its scoped CSS, so no !important     */
+/* needed.                                                              */
 .VPNavBarMenu,
-.VPNavBarMenu *,
-.VPNavBarAppearance,
-.VPNavBarAppearance *,
-.VPNavBarSocialLinks,
-.VPNavBarSocialLinks *,
-.VPNavBarExtra,
-.VPNavBarExtra * {
-	cursor: pointer !important;
-}
-
-.VPNavBarSearch input,
-.VPNavBarSearch input * {
-	cursor: text !important;
+.VPFlyout,
+.menu,
+.VPMenu,
+.VPMenuLink {
+	cursor: pointer;
 }
 
 /* VitePress default desaturates the dropdown trigger's inner text on  */
