@@ -54,22 +54,26 @@
 	-webkit-backdrop-filter: blur(14px);
 }
 
-.VPNav a,
+/* Pin pointer across the whole interactive band of the navbar so the    */
+/* cursor doesn't flicker between pointer (over a link) and default      */
+/* (over the flex gap or the inner <span>). The search input keeps its   */
+/* text cursor below.                                                    */
 .VPNavBarTitle,
-.VPNavBarMenuLink,
-.VPNavBarMenuGroup .button,
-.VPNavBarSocialLink a,
-.VPNavBarExtra {
+.VPNavBarTitle *,
+.VPNavBarMenu,
+.VPNavBarMenu *,
+.VPNavBarAppearance,
+.VPNavBarAppearance *,
+.VPNavBarSocialLinks,
+.VPNavBarSocialLinks *,
+.VPNavBarExtra,
+.VPNavBarExtra * {
 	cursor: pointer;
 }
 
-.VPNav a *,
-.VPNavBarTitle *,
-.VPNavBarMenuLink *,
-.VPNavBarMenuGroup .button *,
-.VPNavBarSocialLink a *,
-.VPNavBarExtra * {
-	cursor: inherit;
+.VPNavBarSearch input,
+.VPNavBarSearch input * {
+	cursor: text;
 }
 
 .VPNavBarTitle .title {
