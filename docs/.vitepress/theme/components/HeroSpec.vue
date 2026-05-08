@@ -254,21 +254,18 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.35rem;
   font-family: 'Fira Code', monospace;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--vp-c-text-2);
   text-decoration: none;
-  padding: 0.35rem 0.1rem;
-  border-bottom: 1px dotted var(--vp-c-divider);
-  transition: color 0.18s ease, border-color 0.18s ease;
+  transition: color 0.18s ease;
   opacity: 0;
   animation: cta-in 540ms cubic-bezier(0.2, 0.7, 0.2, 1) 580ms forwards;
 }
 
 .hero-link:hover {
   color: var(--vp-c-brand-1);
-  border-color: var(--vp-c-brand-1);
 }
 
 .hero-link-arrow {

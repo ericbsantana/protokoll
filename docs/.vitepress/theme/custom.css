@@ -332,23 +332,49 @@ mjx-container[display="true"] .MathJax {
 	border-color: var(--vp-c-brand-1);
 }
 
-.VPButton {
+/* Hero buttons: consistent shape + hover language across primary,    */
+/* secondary, and the See It Run CTA. All three lift 1px on hover and */
+/* draw on the brand-orange family for feedback.                      */
+.VPButton.medium {
 	font-family: "Fira Code", monospace;
 	font-weight: 500;
 	letter-spacing: -0.01em;
 	font-size: 0.875rem;
+	transition:
+		color 0.2s ease,
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		transform 0.2s ease;
 }
 
-.dark .VPButton.medium.alt {
-	border-color: var(--vp-c-divider);
-	color: var(--vp-c-text-1);
-	background-color: transparent;
+.VPButton.medium:hover {
+	transform: translateY(-1px);
 }
 
-.dark .VPButton.medium.alt:hover {
+/* Primary (Get started): filled brand. */
+.VPButton.medium.brand {
 	border-color: var(--vp-c-brand-1);
-	color: var(--vp-c-brand-1);
+	background-color: var(--vp-c-brand-1);
+	color: #ffffff;
+}
+
+.VPButton.medium.brand:hover {
+	border-color: var(--vp-c-brand-2);
+	background-color: var(--vp-c-brand-2);
+	color: #ffffff;
+}
+
+/* Secondary (Deployments): outlined, brand-soft tint on hover. */
+.VPButton.medium.alt {
+	border-color: var(--vp-c-divider);
+	background-color: transparent;
+	color: var(--vp-c-text-1);
+}
+
+.VPButton.medium.alt:hover {
+	border-color: var(--vp-c-brand-1);
 	background-color: var(--vp-c-brand-soft);
+	color: var(--vp-c-brand-1);
 }
 
 .VPFooter {
