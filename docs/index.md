@@ -11,9 +11,6 @@ hero:
       text: Get started
       link: /guide/integration
     - theme: alt
-      text: Whitepaper
-      link: /whitepaper
-    - theme: alt
       text: Deployments
       link: /guide/deployments
 ---
