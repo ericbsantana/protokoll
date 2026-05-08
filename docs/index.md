@@ -10,6 +10,9 @@ hero:
       text: Get started
       link: /guide/integration
     - theme: alt
+      text: See it run
+      link: /demo
+    - theme: alt
       text: Whitepaper
       link: /whitepaper
     - theme: alt
