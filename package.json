@@ -6,20 +6,17 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "tsc --noEmit",
-    "docs:dev": "vitepress dev docs --port 9381",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs --port 9381"
+    "build": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
-    "markdown-it-mathjax3": "^4.3.2",
-    "typescript": "^5.7.3",
-    "vitepress": "^1.6.3",
-    "vitest": "^2.1.8"
+    "typescript": "^6.0.3",
+    "vite": "^6.0.0",
+    "vitest": "^4.1.5"
   },
   "dependencies": {
-    "@noble/curves": "^1.7.0",
-    "viem": "^2.21.54"
-  }
+    "@noble/curves": "^2.2.0",
+    "viem": "^2.48.7"
+  },
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319"
 }

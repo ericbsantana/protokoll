@@ -5,6 +5,8 @@ export default defineConfig({
   titleTemplate: ':title · protokoll',
   description: 'EC-VRF oracle for EVM chains - verifiable randomness built from first principles',
 
+  srcDir: 'content',
+
   head: [
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
@@ -18,8 +20,6 @@ export default defineConfig({
     ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' }],
     ['link', { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico' }]
   ],
-
-  srcExclude: ['theory/**', 'ideas/**', 'project.md'],
 
   sitemap: {
     hostname: 'https://protokoll.dev',

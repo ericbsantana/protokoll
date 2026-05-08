@@ -7,7 +7,7 @@
 // Because c = sha256(G||Y||H||γ||U||V), different encoding → different c value.
 // These two modules are NOT interchangeable - use one consistently.
 
-import { bls12_381 } from '@noble/curves/bls12-381';
+import { bls12_381 } from '@noble/curves/bls12-381.js';
 import {
   scalarMul, add,
   G1_GENERATOR, CURVE_ORDER,

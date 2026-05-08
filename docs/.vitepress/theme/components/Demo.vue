@@ -230,7 +230,7 @@
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
-import { bls12_381 } from '@noble/curves/bls12-381'
+import { bls12_381 } from '@noble/curves/bls12-381.js'
 import {
   betaToBigint,
   bigintToHex,
