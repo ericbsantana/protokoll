@@ -6,11 +6,11 @@
 [![stars](https://img.shields.io/github/stars/ericbsantana/protokoll?style=flat&color=yellow)](https://github.com/ericbsantana/protokoll/stargazers)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![solidity](https://img.shields.io/badge/solidity-0.8.28-363636?logo=solidity)](src/contracts)
-[![network](https://img.shields.io/badge/network-Monad%20testnet-9333ea)](https://protokoll.dev/guide/deployments)
+[![network](https://img.shields.io/badge/network-Monad%20testnet-9333ea)](https://docs.protokoll.dev/guide/deployments)
 
 An EC-VRF oracle for EVM chains. The oracle runs off-chain under a single BLS12-381 key and the on-chain verifier checks the DLEQ proof against the EIP-2537 precompiles. One key holder, no committee, no DKG.
 
-Docs and theory walkthrough: **[protokoll.dev](https://protokoll.dev)**
+Docs and theory walkthrough: **[docs.protokoll.dev](https://docs.protokoll.dev)**
 
 ---
 
@@ -21,7 +21,7 @@ Docs and theory walkthrough: **[protokoll.dev](https://protokoll.dev)**
 | `MonadVRFVerifier` | `0x540A336317274Aac36b8cf9B7510f428Bf3e49Cc` |
 | `MonadVRFAdapter`  | `0x9c46878D6736eDC7eAF135DB6B3B2A9Dab2A756F` |
 
-Chain ID `10143`. Request fee `0.001 MON`, paid to whoever submits the matching `fulfill` transaction. Anyone can fulfill; the proof itself is the authorization. See [docs/guide/deployments](https://protokoll.dev/guide/deployments) for verification commands and earlier addresses.
+Chain ID `10143`. Request fee `0.001 MON`, paid to whoever submits the matching `fulfill` transaction. Anyone can fulfill; the proof itself is the authorization. See [docs/guide/deployments](https://docs.protokoll.dev/guide/deployments) for verification commands and earlier addresses.
 
 ## Integrate
 
@@ -63,7 +63,7 @@ H = hash_to_curve(roundId)        // RFC 9380 SWU on G1
 
 The proof `(γ, c, s)` is a Chaum-Pedersen DLEQ. It shows `γ` came from the public key `Y = k·G` without revealing `k`. On-chain, `MonadVRFVerifier` recomputes `H` via `MAP_FP_TO_G1` (0x10) and checks the DLEQ using `G1ADD` (0x0b) and `G1MSM` (0x0c). The DST is `"protokoll-v1"` and must stay byte-equal across the off-chain code and the contract.
 
-Exactly one `β` is valid for each `(k, roundId)`. The verifier rejects anything else. The [whitepaper](https://protokoll.dev/whitepaper) has the security argument.
+Exactly one `β` is valid for each `(k, roundId)`. The verifier rejects anything else. The [whitepaper](https://docs.protokoll.dev/whitepaper) has the security argument.
 
 ## Project layout
 
@@ -75,7 +75,7 @@ src/
   scripts/     keygen, fixture refresh, ad-hoc proof emission
 script/        Forge deploy scripts
 test/          Foundry tests (Solidity) + vitest tests (TypeScript)
-docs/          VitePress site (protokoll.dev)
+docs/          VitePress site (docs.protokoll.dev)
 Makefile       One-command workflows
 ```
 

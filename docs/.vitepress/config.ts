@@ -22,7 +22,7 @@ export default defineConfig({
   ],
 
   sitemap: {
-    hostname: 'https://protokoll.dev',
+    hostname: 'https://docs.protokoll.dev',
   },
 
   markdown: {
