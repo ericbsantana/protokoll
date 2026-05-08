@@ -10,8 +10,48 @@
     </header>
 
     <ol class="demo-steps">
+      <li class="step" :class="stepStateClass(1)">
+        <div class="step-marker">01</div>
+        <div class="step-body">
+          <h2>Request</h2>
+          <p>
+            A consumer contract emits
+            <code>RandomnessRequested(roundId)</code>. The oracle watches for
+            this event and starts proving.
+          </p>
+
+          <div class="step-input">
+            <label class="input-row">
+              <span class="input-label">roundId</span>
+              <input
+                v-model="roundIdInput"
+                type="text"
+                class="input"
+                :disabled="currentStep > 1"
+                spellcheck="false"
+                autocapitalize="off"
+                autocomplete="off"
+                @keydown.enter.prevent="runRequest"
+              />
+            </label>
+            <button
+              class="run-button"
+              :disabled="!canRun"
+              @click="runRequest"
+            >
+              <span v-if="currentStep === 1">Run</span>
+              <span v-else>Done</span>
+            </button>
+          </div>
+
+          <p v-if="inputError" class="input-error">{{ inputError }}</p>
+
+          <pre v-if="step1Output" class="event-panel">{{ step1Output }}</pre>
+        </div>
+      </li>
+
       <li
-        v-for="step in steps"
+        v-for="step in pendingSteps"
         :key="step.n"
         class="step"
         :class="stepStateClass(step.n)"
@@ -30,14 +70,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { encodeRoundId } from '../lib/demo'
 
-const steps = [
-  {
-    n: 1,
-    title: 'Request',
-    lead: 'A consumer contract emits <code>RandomnessRequested(roundId)</code>.',
-  },
+const pendingSteps = [
   {
     n: 2,
     title: 'Prove',
@@ -55,7 +91,40 @@ const steps = [
   },
 ]
 
+const roundIdInput = ref('lottery-round-42')
 const currentStep = ref(1)
+const step1Output = ref(null)
+
+const inputError = computed(() => {
+  if (currentStep.value > 1) return null
+  const t = roundIdInput.value
+  if (!t.trim()) return null
+  try {
+    encodeRoundId(t)
+    return null
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e)
+  }
+})
+
+const canRun = computed(() => {
+  if (currentStep.value !== 1) return false
+  if (!roundIdInput.value.trim()) return false
+  return inputError.value === null
+})
+
+// Stable demo "requester" address - in a real round this is the consumer contract.
+const REQUESTER = '0x4a2c8a36b6b3df3c6c2e0f6a8b8e0c1f6b8e0d2a'
+
+function runRequest() {
+  if (!canRun.value) return
+  const roundIdHex = encodeRoundId(roundIdInput.value)
+  step1Output.value = `RandomnessRequested(
+  roundId:    ${roundIdHex},
+  requester:  ${REQUESTER}
+)`
+  currentStep.value = 2
+}
 
 function stepStateClass(n) {
   if (currentStep.value > n) return 'is-done'
@@ -168,6 +237,105 @@ function stepStateClass(n) {
   color: #f97316;
 }
 
+/* Step 1 input row */
+
+.step-input {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 5.25rem 1fr;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 5px;
+  background: var(--vp-c-bg-alt);
+  padding: 0.55rem 0.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-row:focus-within {
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+
+.input-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3);
+}
+
+.input {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--vp-c-text-1);
+  padding: 0;
+  width: 100%;
+}
+
+.input:disabled {
+  color: var(--vp-c-text-2);
+  cursor: not-allowed;
+}
+
+.run-button {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding: 0 1.25rem;
+  border: 1px solid var(--vp-c-brand-1);
+  border-radius: 5px;
+  background: var(--vp-c-brand-1);
+  color: #0c0f12;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+
+.run-button:hover:not(:disabled) {
+  background: var(--vp-c-brand-3);
+  transform: translateY(-1px);
+}
+
+.run-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  background: transparent;
+  color: var(--vp-c-text-3);
+  border-color: var(--vp-c-divider);
+}
+
+.input-error {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: #f87171;
+  margin: 0.5rem 0 0;
+}
+
+.event-panel {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  background: var(--vp-c-bg-alt);
+  border: 1px solid var(--vp-c-divider);
+  border-left: 2px solid var(--vp-c-brand-1);
+  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  margin: 1rem 0 0;
+  color: var(--vp-c-text-1);
+  white-space: pre;
+  overflow-x: auto;
+}
+
 .step-content {
   font-family: 'Fira Code', monospace;
   font-size: 0.82rem;
@@ -204,6 +372,14 @@ function stepStateClass(n) {
 
   .step-marker {
     font-size: 0.95rem;
+  }
+
+  .step-input {
+    grid-template-columns: 1fr;
+  }
+
+  .input-row {
+    grid-template-columns: 4.5rem 1fr;
   }
 }
 </style>
