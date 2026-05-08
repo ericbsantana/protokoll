@@ -14,5 +14,10 @@
   },
   "dependencies": {
     "@noble/curves": "^2.2.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
