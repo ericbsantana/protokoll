@@ -1,5 +1,6 @@
 ---
 layout: home
+titleTemplate: false
 
 hero:
   name: "protokoll"
@@ -9,9 +10,6 @@ hero:
     - theme: brand
       text: Get started
       link: /guide/integration
-    - theme: alt
-      text: See it run
-      link: /demo
     - theme: alt
       text: Whitepaper
       link: /whitepaper

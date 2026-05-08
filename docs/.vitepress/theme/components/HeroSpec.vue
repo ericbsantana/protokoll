@@ -10,6 +10,19 @@
       <span class="desc" :aria-label="item.desc">{{ descDisplay[i] }}</span>
     </li>
   </ul>
+
+  <a class="hero-cta" href="/demo">
+    <span class="cta-play" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="14" height="14">
+        <polygon points="6,4 20,12 6,20" fill="currentColor" />
+      </svg>
+    </span>
+    <span class="cta-text">
+      <span class="cta-title">See it run</span>
+      <span class="cta-sub">walk through a full round in your browser</span>
+    </span>
+    <span class="cta-arrow" aria-hidden="true">→</span>
+  </a>
 </template>
 
 <script setup>
@@ -140,6 +153,101 @@ onBeforeUnmount(() => {
   }
 }
 
+.hero-cta {
+  display: inline-grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.95rem;
+  margin-top: 1.85rem;
+  padding: 0.85rem 1.05rem 0.85rem 0.85rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  font-family: 'Fira Code', monospace;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.25s ease;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: cta-in 540ms cubic-bezier(0.2, 0.7, 0.2, 1) 480ms forwards;
+}
+
+.hero-cta:hover {
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-bg-elv);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 0 rgba(249, 115, 22, 0.12),
+    0 8px 24px rgba(249, 115, 22, 0.08);
+}
+
+.hero-cta:hover .cta-arrow {
+  transform: translateX(3px);
+  color: var(--vp-c-brand-1);
+}
+
+.cta-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 60%, #ea6c0a 100%);
+  color: #0c0f12;
+  flex-shrink: 0;
+}
+
+.cta-play svg {
+  margin-left: 2px;
+}
+
+.cta-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.cta-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--vp-c-text-1);
+}
+
+.cta-sub {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 0.78rem;
+  color: var(--vp-c-text-2);
+  margin-top: 0.15rem;
+}
+
+.cta-arrow {
+  font-size: 1.1rem;
+  color: var(--vp-c-text-3);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+@keyframes cta-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-cta {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
 @media (max-width: 640px) {
   .hero-spec {
     font-size: 0.75rem;
@@ -148,6 +256,21 @@ onBeforeUnmount(() => {
   .hero-spec li {
     grid-template-columns: 0.9rem 5.75rem 1fr;
     gap: 0.45rem;
+  }
+  .hero-cta {
+    margin-top: 1.5rem;
+    padding: 0.75rem 0.9rem 0.75rem 0.75rem;
+    gap: 0.75rem;
+  }
+  .cta-play {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+  .cta-title {
+    font-size: 0.88rem;
+  }
+  .cta-sub {
+    font-size: 0.72rem;
   }
 }
 </style>
