@@ -18,8 +18,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: conventional commits
         if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git log --no-merges --format='%s' origin/${{ github.base_ref }}..HEAD | while read -r msg; do
+          git log --no-merges --format='%s' "origin/$BASE_REF..HEAD" | while read -r msg; do
             echo "$msg" | grep -qE '^(feat|fix|chore|docs|test|refactor|style|ci|perf|build|revert)(\([^)]+\))?!?: .+' || {
               echo "::error::commit subject not conventional: $msg"
               exit 1
