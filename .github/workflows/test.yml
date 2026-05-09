@@ -29,7 +29,7 @@ jobs:
         if: github.event_name == 'pull_request'
         working-directory: ${{ github.workspace }}
         run: |
-          git log --format='%s' origin/${{ github.base_ref }}..HEAD | while read -r msg; do
+          git log --no-merges --format='%s' origin/${{ github.base_ref }}..HEAD | while read -r msg; do
             echo "$msg" | grep -qE '^(feat|fix|chore|docs|test|refactor|style|ci|perf|build|revert)(\([^)]+\))?!?: .+' || {
               echo "::error::commit subject not conventional: $msg"
               exit 1
