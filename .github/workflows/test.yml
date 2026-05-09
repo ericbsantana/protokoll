@@ -19,6 +19,11 @@ jobs:
       - run: forge --version
       - run: forge build --sizes
       - run: forge test -vvv
+      - name: invariant suite (1024 runs / 100 depth)
+        run: forge test --match-contract AdapterInvariant -vvv
+        env:
+          FOUNDRY_INVARIANT_RUNS: "1024"
+          FOUNDRY_INVARIANT_DEPTH: "100"
       - run: forge snapshot --check
 
   vitest:
