@@ -25,10 +25,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: npx tsx packages/protokoll/src/scripts/fetchStats.ts
 
-      # Commit via the GitHub API so the commit is signed by GitHub's web-flow
-      # key and passes the "verified signatures" branch protection rule. Local
-      # `git commit` + `git push` from the runner produces unsigned commits and
-      # is rejected by the rule.
       - name: commit badges if changed
         uses: actions/github-script@v7
         with:
