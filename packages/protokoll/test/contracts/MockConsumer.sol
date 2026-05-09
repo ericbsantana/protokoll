@@ -70,6 +70,41 @@ contract MockReverter is MockConsumer {
     }
 }
 
+// Reentrant: tries to re-enter `fulfill` from inside the callback frame.
+// The adapter clears `fulfilled[key]`, `pendingRequests[key]`, and `escrow[key]`
+// before invoking the callback (CEI), so the re-entered call must hit the
+// `AlreadyFulfilled` guard. The callback frame swallows the resulting revert
+// (called via assembly with no propagation), and the outer fulfill still
+// settles cleanly. `lastReentryReverted` records that the re-entry attempt
+// was actually rejected (and not silently absorbed by the gas cap before the
+// adapter could check its guards).
+contract MockReentrant is MockConsumer {
+    bool public reentryAttempted;
+    bool public lastReentryReverted;
+
+    constructor(address adapter_) MockConsumer(adapter_) {}
+
+    function fulfillRandomness(
+        bytes32 roundId,
+        bytes32 /* beta */
+    )
+        external
+        override
+    {
+        reentryAttempted = true;
+        // Re-enter with the same (consumer, roundId). State has already been
+        // cleared by the outer fulfill, so this must revert with AlreadyFulfilled.
+        // Build minimal call data; the proof bytes don't need to be valid because
+        // the guard fires before verifyProof is reached.
+        bytes memory empty = new bytes(0);
+        try adapter.fulfill(address(this), roundId, empty, 0, 0) {
+            lastReentryReverted = false;
+        } catch {
+            lastReentryReverted = true;
+        }
+    }
+}
+
 // ReturnBomb: returns a huge byte array. Forces the EVM to allocate
 // large returndata. fulfill() must NOT copy it into memory.
 contract MockReturnBomb is MockConsumer {
