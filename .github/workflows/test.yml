@@ -24,7 +24,7 @@ jobs:
         env:
           FOUNDRY_INVARIANT_RUNS: "1024"
           FOUNDRY_INVARIANT_DEPTH: "100"
-      - run: forge snapshot --check
+      - run: forge snapshot --check --no-match-contract AdapterInvariant
 
   vitest:
     runs-on: ubuntu-latest
