@@ -29,6 +29,7 @@ jobs:
           done
       - uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # v1
         with:
+          version: 1.7.0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: forge fmt
         working-directory: packages/protokoll
@@ -45,6 +46,7 @@ jobs:
           submodules: recursive # forge-std submodule under packages/protokoll/lib
       - uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # v1
         with:
+          version: 1.7.0
           token: ${{ secrets.GITHUB_TOKEN }}
       - run: forge build --sizes
       - run: forge test -vvv
