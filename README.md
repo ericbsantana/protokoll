@@ -2,7 +2,6 @@
 
 [![tests](https://github.com/ericbsantana/protokoll/actions/workflows/test.yml/badge.svg)](https://github.com/ericbsantana/protokoll/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/tag/ericbsantana/protokoll?label=release&color=blue)](https://github.com/ericbsantana/protokoll/tags)
-[![rounds fulfilled](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ericbsantana/protokoll/main/.github/badges/rounds.json)](https://testnet.monadexplorer.com/address/0x9c46878D6736eDC7eAF135DB6B3B2A9Dab2A756F)
 [![stars](https://img.shields.io/github/stars/ericbsantana/protokoll?style=flat&color=yellow)](https://github.com/ericbsantana/protokoll/stargazers)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![solidity](https://img.shields.io/badge/solidity-0.8.28-363636?logo=solidity)](packages/protokoll/src/contracts)
