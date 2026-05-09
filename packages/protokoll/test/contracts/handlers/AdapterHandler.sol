@@ -17,17 +17,18 @@ contract AdapterHandler is Test {
     uint256 public constant FEE = 0.001 ether;
 
     // Any 128-byte gamma works; MockVerifier ignores it.
-    bytes public constant GAMMA = hex"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000";
+    bytes public constant GAMMA =
+        hex"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000";
 
     address[] public actors;
 
     // Ghost state, compared against actual adapter state by the invariants:
-    mapping(bytes32 => uint256) public fulfillCount;       // T1: per-key successful fulfills
-    bytes32[] public touchedKeys;                           // enumeration helper
+    mapping(bytes32 => uint256) public fulfillCount; // T1: per-key successful fulfills
+    bytes32[] public touchedKeys; // enumeration helper
     mapping(bytes32 => bool) private _keyTouched;
-    uint256 public successfulFulfillCount;                  // smoke counter
-    uint256 public ghostExpectedEscrow;                     // T2: expected sum of adapter.escrow
-    uint256 public ghostTotalPaidOut;                       // T5: ETH actually received as fulfiller
+    uint256 public successfulFulfillCount; // smoke counter
+    uint256 public ghostExpectedEscrow; // T2: expected sum of adapter.escrow
+    uint256 public ghostTotalPaidOut; // T5: ETH actually received as fulfiller
 
     constructor(MonadVRFAdapter adapter_, MockVerifier mockVerifier_) {
         adapter = adapter_;

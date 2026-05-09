@@ -62,9 +62,7 @@ contract AdapterInvariantTest is Test {
         uint256 n = handler.touchedKeysLength();
         for (uint256 i = 0; i < n; i++) {
             bytes32 key = handler.touchedKeys(i);
-            assertFalse(
-                adapter.pendingRequests(key) && adapter.fulfilled(key), "pending and fulfilled both true"
-            );
+            assertFalse(adapter.pendingRequests(key) && adapter.fulfilled(key), "pending and fulfilled both true");
         }
     }
 

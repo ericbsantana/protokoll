@@ -23,7 +23,7 @@ contract MockConsumer is IRandomnessAdapter {
 
     function fulfillRandomness(bytes32 roundId, bytes32 beta) external virtual override {
         lastRoundId = roundId;
-        lastBeta    = beta;
+        lastBeta = beta;
     }
 }
 
@@ -31,12 +31,24 @@ contract MockConsumer is IRandomnessAdapter {
 contract MockGriefer is MockConsumer {
     constructor(address adapter_) MockConsumer(adapter_) {}
 
-    function fulfillRandomness(bytes32 /* roundId */, bytes32 /* beta */) external pure override {
+    function fulfillRandomness(
+        bytes32,
+        /* roundId */
+        bytes32 /* beta */
+    )
+        external
+        pure
+        override
+    {
         // Unbounded loop - exhausts whatever gas the caller forwards.
         // With CALLBACK_GAS_LIMIT in place this OOGs the callback frame,
         // not the fulfill() outer frame.
         uint256 i;
-        while (true) { unchecked { i++; } }
+        while (true) {
+            unchecked {
+                i++;
+            }
+        }
     }
 }
 
@@ -45,7 +57,15 @@ contract MockGriefer is MockConsumer {
 contract MockReverter is MockConsumer {
     constructor(address adapter_) MockConsumer(adapter_) {}
 
-    function fulfillRandomness(bytes32 /* roundId */, bytes32 /* beta */) external pure override {
+    function fulfillRandomness(
+        bytes32,
+        /* roundId */
+        bytes32 /* beta */
+    )
+        external
+        pure
+        override
+    {
         revert("intentional callback revert");
     }
 }
@@ -55,7 +75,15 @@ contract MockReverter is MockConsumer {
 contract MockReturnBomb is MockConsumer {
     constructor(address adapter_) MockConsumer(adapter_) {}
 
-    function fulfillRandomness(bytes32 /* roundId */, bytes32 /* beta */) external pure override {
+    function fulfillRandomness(
+        bytes32,
+        /* roundId */
+        bytes32 /* beta */
+    )
+        external
+        pure
+        override
+    {
         // Build and return ~64 KB of data. Without the (0,0) output buffer in
         // the adapter's assembly call, this would cause a returndatacopy of
         // matching size in the caller frame, inflating gas dramatically.

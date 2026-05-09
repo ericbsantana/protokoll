@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MonadVRFAdapter}  from "../src/contracts/MonadVRFAdapter.sol";
+import {MonadVRFAdapter} from "../src/contracts/MonadVRFAdapter.sol";
 
 // Sends a requestRandomness() call to a deployed MonadVRFAdapter.
 // The oracle service will detect the event and fulfill it.
@@ -14,7 +14,7 @@ import {MonadVRFAdapter}  from "../src/contracts/MonadVRFAdapter.sol";
 contract RequestRandomness is Script {
     function run() external {
         address adapterAddr = vm.envAddress("ADAPTER_ADDRESS");
-        string  memory id   = vm.envString("ROUND_ID");
+        string memory id = vm.envString("ROUND_ID");
 
         bytes32 roundId = bytes32(bytes(id));
         uint256 fee = MonadVRFAdapter(adapterAddr).requestFee();
