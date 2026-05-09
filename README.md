@@ -50,6 +50,12 @@ contract Game {
 
 The adapter forwards at most 200 000 gas to the callback, so keep it small.
 
+For TypeScript projects, [`@protokoll-eth/abi`](packages/abi) ships the typed ABIs and the active deployment addresses:
+
+```ts
+import { monadVrfAdapterAbi, activeDeployment } from '@protokoll-eth/abi'
+```
+
 ## How it works
 
 For oracle private key `k` and a 32-byte `roundId`:
@@ -78,6 +84,7 @@ packages/
     test/           Foundry tests (Solidity) + vitest tests (TypeScript)
     foundry.toml
   docs/             @protokoll/docs - VitePress site (docs.protokoll.dev)
+  abi/              @protokoll-eth/abi - published ABIs and addresses for integrators
 Makefile            One-command workflows
 pnpm-workspace.yaml Workspace config
 ```
