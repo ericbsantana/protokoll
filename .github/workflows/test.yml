@@ -28,6 +28,8 @@ jobs:
             }
           done
       - uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: forge fmt
         working-directory: packages/protokoll
         run: forge fmt --check
@@ -42,6 +44,8 @@ jobs:
         with:
           submodules: recursive # forge-std submodule under packages/protokoll/lib
       - uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - run: forge build --sizes
       - run: forge test -vvv
       - name: invariant suite (1024 runs / 100 depth)
