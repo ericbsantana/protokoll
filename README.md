@@ -17,10 +17,10 @@ Docs and theory walkthrough: **[docs.protokoll.dev](https://docs.protokoll.dev)*
 
 | Contract           | Address                                      |
 |--------------------|----------------------------------------------|
-| `MonadVRFVerifier` | `0x540A336317274Aac36b8cf9B7510f428Bf3e49Cc` |
-| `MonadVRFAdapter`  | `0x9c46878D6736eDC7eAF135DB6B3B2A9Dab2A756F` |
+| `MonadVRFVerifier` | `0x4b3fDB4bdE739B75b697751B81690707c0F1940B` |
+| `MonadVRFAdapter`  | `0xa327402C4eED5862adC123b9b1b93acA475C4668` |
 
-Chain ID `10143`. Request fee `0.001 MON`, paid to whoever submits the matching `fulfill` transaction. Anyone can fulfill; the proof itself is the authorization. See [docs/guide/deployments](https://docs.protokoll.dev/guide/deployments) for verification commands and earlier addresses.
+Chain ID `10143`. Request fee `0.08 MON`, paid to whoever submits the matching `fulfill` transaction. Anyone can fulfill; the proof itself is the authorization. See [docs/guide/deployments](https://docs.protokoll.dev/guide/deployments) for verification commands and earlier addresses.
 
 ## Integrate
 
@@ -35,7 +35,7 @@ interface IAdapter {
 }
 
 contract Game {
-    IAdapter constant ADAPTER = IAdapter(0x9c46878D6736eDC7eAF135DB6B3B2A9Dab2A756F);
+    IAdapter constant ADAPTER = IAdapter(0xa327402C4eED5862adC123b9b1b93acA475C4668);
 
     function play(bytes32 roundId) external payable {
         ADAPTER.requestRandomness{value: ADAPTER.requestFee()}(roundId);

@@ -13,14 +13,21 @@ export const MONAD_TESTNET = {
   chainId: 10143,
   rpc: 'https://testnet-rpc.monad.xyz',
   explorer: 'https://testnet.monadexplorer.com',
-  requestFee: '0.001 MON',
-  requestFeeWei: '1000000000000000',
+  requestFee: '0.08 MON',
+  requestFeeWei: '80000000000000000',
 } as const
 
 export const DEPLOYMENTS: readonly Deployment[] = [
   {
-    version: 'v0.3.0',
+    version: 'v0.4.0',
     active: true,
+    verifier: '0x4b3fDB4bdE739B75b697751B81690707c0F1940B',
+    adapter: '0xa327402C4eED5862adC123b9b1b93acA475C4668',
+    dst: 'protokoll-v1',
+  },
+  {
+    version: 'v0.3.0',
+    active: false,
     verifier: '0x540A336317274Aac36b8cf9B7510f428Bf3e49Cc',
     adapter: '0x9c46878D6736eDC7eAF135DB6B3B2A9Dab2A756F',
     dst: 'protokoll-v1',

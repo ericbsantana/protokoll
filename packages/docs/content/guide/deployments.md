@@ -2,39 +2,42 @@
 
 ## Monad Testnet
 
-> Three builds have been deployed. **Use the v0.3.0 (DST rename) addresses.**
-> v0.2.0 is hash-locked to the legacy `randnad-v1` DST and will reject every
-> proof produced by the current oracle (which uses `protokoll-v1`). v0.1.x is
-> additionally vulnerable to roundId-squatting (C1) and has no fee or
-> callback gas cap. Do not integrate against anything but v0.3.0.
+> Four builds have been deployed. **Use the v0.4.0 (fee bump) addresses.**
+> v0.3.0 is still on-chain but no oracle fulfills it; its 0.001 MON
+> request fee is ~25x below the actual cost of `fulfill` and is not
+> economically sustainable. v0.2.0 is hash-locked to the legacy
+> `randnad-v1` DST and will reject every proof produced by the current
+> oracle (which uses `protokoll-v1`). v0.1.x is additionally vulnerable
+> to roundId-squatting (C1) and has no fee or callback gas cap. Do not
+> integrate against anything but v0.4.0.
 
-### v0.3.0 - DST rename (`protokoll-v1`) - **ACTIVE**
+### v0.4.0 - fee bump (0.08 MON) - **ACTIVE**
 
 | Contract            | Address                                                              |
 |---------------------|----------------------------------------------------------------------|
-| `MonadVRFVerifier`  | <DeployedAddr version="v0.3.0" contract="verifier" />                 |
-| `MonadVRFAdapter`   | <DeployedAddr version="v0.3.0" contract="adapter" />                  |
+| `MonadVRFVerifier`  | <DeployedAddr version="v0.4.0" contract="verifier" />                 |
+| `MonadVRFAdapter`   | <DeployedAddr version="v0.4.0" contract="adapter" />                  |
 
 - **Chain ID:** 10143
 - **RPC:** `https://testnet-rpc.monad.xyz`
 - **Explorer:** [testnet.monadexplorer.com](https://testnet.monadexplorer.com)
-- **Request fee:** `0.001 MON` (1 × 10¹⁵ wei) - paid to the fulfiller, not a treasury
+- **Request fee:** `0.08 MON` (8 × 10¹⁶ wei) - paid to the fulfiller, not a treasury
 - **DST:** `protokoll-v1` (must match `src/oracle/proof.ts`)
 
-#### v0.3.0 deploy transactions
+#### v0.4.0 deploy transactions
 
 | Contract            | Transaction Hash                                                                                                                            |
 |---------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| `MonadVRFVerifier`  | [`0x943e2f9c...`](https://testnet.monadexplorer.com/tx/0x943e2f9c342e2f036fc2b53aa912ce5d48a522ff88672db572d63d49da01cf71) (block 30497591) |
-| `MonadVRFAdapter`   | [`0xd29363c4...`](https://testnet.monadexplorer.com/tx/0xd29363c4cc5f39359b06c3b57ab22555c7b60fe7c317bc0fb157a6733a5faf68) (block 30497597) |
+| `MonadVRFVerifier`  | [`0xdcb965be...`](https://testnet.monadexplorer.com/tx/0xdcb965be91f74afde6098dc35c7a30955b655721ed52ac84d7c12ec3016553d1) (block 30694924) |
+| `MonadVRFAdapter`   | [`0xce704a97...`](https://testnet.monadexplorer.com/tx/0xce704a9718e0a1b7cdc1fbba2bac3b3c9be729d9479c282b5b338bf66e8da7a5) (block 30694926) |
 
-Total deploy gas: 1 455 266 (≈0.1499 MON @ 103 gwei).
+Total deploy gas: 1 455 266 (≈0.150 MON @ 103 gwei).
 
 On-chain state verified post-deploy via `make deploy-verify`:
 
 ```
-requestFee()         → 1000000000000000   (0.001 MON ✓)
-verifier()           → 0x540A...49Cc       (matches deployed verifier ✓)
+requestFee()         → 80000000000000000  (0.08 MON ✓)
+verifier()           → 0x4b3f...940B       (matches deployed verifier ✓)
 CALLBACK_GAS_LIMIT() → 200000              (200k cap ✓)
 oraclePublicKey()    → 128 bytes ✓
 ```
@@ -42,6 +45,44 @@ oraclePublicKey()    → 128 bytes ✓
 The constructor's G1MSM smoke check passed (otherwise the deploy would
 have reverted with `InvalidPublicKey`), confirming the public key is on
 curve and in the prime-order subgroup.
+
+#### Why v0.4.0 was needed
+
+A typical `fulfill` on Monad testnet costs around 250 000 gas at ~103
+gwei, or ~0.025 MON of inclusion cost. The v0.3.0 fee of 0.001 MON
+covered roughly 10 000 gas worth and left the oracle ~25x underwater
+per request. 0.08 MON gives ~3x margin over typical and ~1.6x over the
+worst case (callback griefing at the full 200 000 gas cap), so
+fulfillment is self-incentivising at realistic gas prices.
+
+Nothing under `src/contracts/` changed between v0.3.0 and v0.4.0 - this
+is a redeploy of the same source with a different `requestFee_`
+constructor argument. `MonadVRFAdapter.requestFee` is `immutable`, so
+bumping it requires a fresh deploy. The verifier is redeployed
+alongside the adapter to keep the address pair version-locked, matching
+the v0.3.0 release shape.
+
+The oracle public key is unchanged, so the off-chain oracle service
+keeps running with the same `ORACLE_K` - only `ADAPTER_ADDRESS` is
+swapped.
+
+### Deprecated - v0.3.0 (fee insufficient to sustain oracle)
+
+> Fee was 0.001 MON, ~25x below real fulfill cost. Replaced by v0.4.0.
+> The contract is still on-chain but no oracle is watching it; new
+> requests will sit pending forever.
+
+| Contract            | Address                                                              |
+|---------------------|----------------------------------------------------------------------|
+| `MonadVRFVerifier`  | <DeployedAddr version="v0.3.0" contract="verifier" />                 |
+| `MonadVRFAdapter`   | <DeployedAddr version="v0.3.0" contract="adapter" />                  |
+
+#### v0.3.0 deploy transactions
+
+| Contract            | Transaction Hash                                                                                                                            |
+|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `MonadVRFVerifier`  | [`0x943e2f9c...`](https://testnet.monadexplorer.com/tx/0x943e2f9c342e2f036fc2b53aa912ce5d48a522ff88672db572d63d49da01cf71) (block 30497591) |
+| `MonadVRFAdapter`   | [`0xd29363c4...`](https://testnet.monadexplorer.com/tx/0xd29363c4cc5f39359b06c3b57ab22555c7b60fe7c317bc0fb157a6733a5faf68) (block 30497597) |
 
 #### Why v0.3.0 was needed
 
@@ -107,7 +148,7 @@ See the commit log under `fix(sec): S1..S5` for the full rationale and exact cha
 | `MonadVRFVerifier`  | [`0xe705c78c...`](https://testnet.monadexplorer.com/tx/0xe705c78c7ac0ebbe694b91777ba0cedcfdf84d55fa014c75f881d7281293bb63) |
 | `MonadVRFAdapter`   | [`0x53b0f7161d1f287bfc5967804a286ff051e3c959c5a6b12856cb6718f3524ba5`](https://testnet.monadexplorer.com/tx/0x53b0f7161d1f287bfc5967804a286ff051e3c959c5a6b12856cb6718f3524ba5) |
 
-### Oracle public key (v0.3.0)
+### Oracle public key (v0.4.0)
 
 The oracle's BLS12-381 public key `Y = k·G`, encoded in EIP-2537 128-byte format:
 
@@ -120,8 +161,9 @@ The oracle's BLS12-381 public key `Y = k·G`, encoded in EIP-2537 128-byte forma
 
 This key is set at deploy time and cannot be changed. All proofs submitted
 to a given adapter must verify against the public key registered with that
-adapter. v0.3.0 uses a different key from v0.1.x / v0.2.0; the off-chain
-oracle's `ORACLE_K` was rotated alongside the redeploy.
+adapter. v0.4.0 uses the same key as v0.3.0 (the bump is purely a fee
+change), so the off-chain oracle's `ORACLE_K` did not rotate; only
+`ADAPTER_ADDRESS` was swapped.
 
 ## Mainnet
 
@@ -129,14 +171,14 @@ Not yet deployed. Mainnet availability depends on the target chain enabling the 
 
 ## Verifying addresses
 
-You can verify the live v0.3.0 adapter's registered key from the command line:
+You can verify the live v0.4.0 adapter's registered key from the command line:
 
 ```bash
-cast call 0x9c46878D6736eDC7eAF135DB6B3B2A9Dab2A756F \
+cast call 0xa327402C4eED5862adC123b9b1b93acA475C4668 \
   'oraclePublicKey()(bytes)' --rpc-url https://testnet-rpc.monad.xyz
 ```
 
-Or run `make deploy-verify ADAPTER=0x9c46... VERIFIER=0x540A...` for a full
+Or run `make deploy-verify ADAPTER=0xa327... VERIFIER=0x4b3f...` for a full
 on-chain sanity check.
 
 This returns the 128-byte EIP-2537 encoded public key, reconstructed from
