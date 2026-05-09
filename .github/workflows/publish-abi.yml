@@ -34,5 +34,3 @@ jobs:
         run: git diff --exit-code packages/abi/src/abis.ts
       - run: pnpm --filter @protokoll-eth/abi build
       - run: pnpm --filter @protokoll-eth/abi publish --no-git-checks --access public
-        env:
-          NODE_AUTH_TOKEN: ""
