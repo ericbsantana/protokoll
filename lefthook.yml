@@ -1,0 +1,20 @@
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged --verbose --redact
+    forge-fmt:
+      glob: "packages/protokoll/**/*.sol"
+      run: cd packages/protokoll && forge fmt --check
+
+commit-msg:
+  commands:
+    conventional-prefix:
+      run: |
+        head -1 {1} | grep -qE '^(feat|fix|chore|docs|test|refactor|style|ci|perf|build|revert)(\([^)]+\))?!?: .+' || {
+          echo "✗ commit subject must start with a conventional prefix:"
+          echo "  feat | fix | chore | docs | test | refactor | style | ci | perf | build | revert"
+          echo "  optionally followed by (scope) and ! for breaking changes."
+          echo "  example: feat(adapter): add request-fee escrow"
+          exit 1
+        }

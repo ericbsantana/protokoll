@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 import {MonadVRFVerifier} from "../src/contracts/MonadVRFVerifier.sol";
-import {MonadVRFAdapter}  from "../src/contracts/MonadVRFAdapter.sol";
+import {MonadVRFAdapter} from "../src/contracts/MonadVRFAdapter.sol";
 
 contract Deploy is Script {
     function run() external {
@@ -28,9 +28,7 @@ contract Deploy is Script {
         vm.startBroadcast();
 
         MonadVRFVerifier verifier = new MonadVRFVerifier();
-        MonadVRFAdapter  adapter  = new MonadVRFAdapter(
-            address(verifier), pk0, pk1, pk2, pk3, requestFee
-        );
+        MonadVRFAdapter adapter = new MonadVRFAdapter(address(verifier), pk0, pk1, pk2, pk3, requestFee);
 
         vm.stopBroadcast();
 

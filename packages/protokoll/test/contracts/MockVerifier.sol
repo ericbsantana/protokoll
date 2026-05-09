@@ -11,11 +11,7 @@ contract MockVerifier {
         accept = v;
     }
 
-    function verifyProof(bytes calldata, bytes32, bytes calldata, uint256, uint256)
-        external
-        view
-        returns (bool)
-    {
+    function verifyProof(bytes calldata, bytes32, bytes calldata, uint256, uint256) external view returns (bool) {
         return accept;
     }
 }
