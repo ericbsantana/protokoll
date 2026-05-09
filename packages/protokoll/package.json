@@ -1,6 +1,6 @@
 {
   "name": "@protokoll/core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "EC-VRF oracle for EVM chains - core contracts, oracle service, and BLS12-381 math",
   "type": "module",
   "private": true,
