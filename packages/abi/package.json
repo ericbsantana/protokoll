@@ -1,5 +1,5 @@
 {
-  "name": "@protokoll/abi",
+  "name": "@protokoll-eth/abi",
   "version": "0.4.0",
   "description": "ABIs and deployment addresses for the protokoll EC-VRF contracts on Monad",
   "license": "MIT",

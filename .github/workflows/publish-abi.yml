@@ -29,10 +29,10 @@ jobs:
       - name: forge build
         working-directory: packages/protokoll
         run: forge build
-      - run: pnpm --filter @protokoll/abi generate
+      - run: pnpm --filter @protokoll-eth/abi generate
       - name: verify abis.ts is up to date with forge artifacts
         run: git diff --exit-code packages/abi/src/abis.ts
-      - run: pnpm --filter @protokoll/abi build
-      - run: pnpm --filter @protokoll/abi publish --no-git-checks --access public
+      - run: pnpm --filter @protokoll-eth/abi build
+      - run: pnpm --filter @protokoll-eth/abi publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

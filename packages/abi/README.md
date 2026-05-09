@@ -1,9 +1,9 @@
-# @protokoll/abi
+# @protokoll-eth/abi
 
 ABIs and deployment addresses for the [protokoll](https://docs.protokoll.dev) EC-VRF contracts on Monad.
 
 ```bash
-npm install @protokoll/abi
+npm install @protokoll-eth/abi
 ```
 
 No runtime dependencies. ABIs are exported as `as const` literals so [viem](https://viem.sh) and [wagmi](https://wagmi.sh) infer argument and return types automatically.
@@ -15,7 +15,7 @@ No runtime dependencies. ABIs are exported as `as const` literals so [viem](http
 ```ts
 import { createWalletClient, http } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { monadVrfAdapterAbi, activeDeployment } from '@protokoll/abi'
+import { monadVrfAdapterAbi, activeDeployment } from '@protokoll-eth/abi'
 
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`)
 const client = createWalletClient({
@@ -39,7 +39,7 @@ await client.writeContract({
 
 ```ts
 import { createPublicClient, http, parseAbiItem } from 'viem'
-import { monadVrfAdapterAbi, activeDeployment } from '@protokoll/abi'
+import { monadVrfAdapterAbi, activeDeployment } from '@protokoll-eth/abi'
 
 const client = createPublicClient({
   transport: http('https://testnet-rpc.monad.xyz'),
