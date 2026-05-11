@@ -1,3 +1,7 @@
+MonadVRFAdapterAdversarial:test_oogConsumer_settlesAndPaysFulfiller() (gas: 432676)
+MonadVRFAdapterAdversarial:test_reentrantConsumer_guardHoldsAndOuterSettles() (gas: 328786)
+MonadVRFAdapterAdversarial:test_revertingConsumer_settlesAndPaysFulfiller() (gas: 245130)
+MonadVRFAdapterAdversarial:test_underpaymentRejectedBeforeStateChange() (gas: 173957)
 MonadVRFAdapterTest:test_anyoneCanFulfill() (gas: 214041)
 MonadVRFAdapterTest:test_deployWithGarbagePK_reverts() (gas: 1040430452)
 MonadVRFAdapterTest:test_deployWithIdentityPK_reverts() (gas: 38931)
